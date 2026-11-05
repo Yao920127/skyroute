@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.api import credentials, explore, watchlists
 from app.config import Settings, get_settings
@@ -115,6 +115,11 @@ def create_app(settings: Settings | None = None, container: Container | None = N
     app.include_router(explore.router)
     app.include_router(watchlists.router)
     app.include_router(credentials.router)
+
+    @app.get("/", include_in_schema=False)
+    async def root() -> RedirectResponse:
+        """直接開後端網址時導向互動式 API 文件（Swagger UI）。"""
+        return RedirectResponse(url=app.docs_url or "/redoc")
 
     @app.get("/api/health", tags=["ops"])
     async def health() -> dict[str, str]:

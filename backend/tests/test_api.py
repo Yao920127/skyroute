@@ -101,6 +101,12 @@ class TestSearchApi:
     async def test_health(self, client: httpx.AsyncClient) -> None:
         assert (await client.get("/api/health")).json() == {"status": "ok"}
 
+    async def test_root_redirects_to_docs(self, client: httpx.AsyncClient) -> None:
+        response = await client.get("/")
+        assert response.status_code == 307
+        assert response.headers["location"] == "/docs"
+        assert (await client.get("/docs")).status_code == 200
+
 
 class TestFareMatrix:
     @respx.mock
