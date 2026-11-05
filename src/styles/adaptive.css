@@ -81,8 +81,14 @@
   stroke-linecap: round;
 }
 
+/*
+ * flex-basis 必須是 auto（依內容高度），不能用 flex: 1（basis 0%）：
+ * 對話框沒有固定高度時，Safari 會把 basis 0% 的捲動區壓到幾乎 0 高，內容整個被藏起來。
+ * min-height: 0 讓內容超過 max-height 時改為捲動，而不是撐破對話框。
+ */
 .panel__scroll {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: var(--space-xl);
@@ -161,6 +167,11 @@
 
   .panel__scroll {
     padding: var(--space-lg);
+  }
+
+  /* 沒有底部按鈕列時，最後一塊內容要避開 iPhone 底部安全區與 Safari 工具列 */
+  .panel__scroll:last-child {
+    padding-bottom: calc(var(--space-xl) + var(--safe-bottom));
   }
 
   .panel__foot {
