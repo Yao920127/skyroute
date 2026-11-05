@@ -227,13 +227,22 @@ class AirportOut(BaseModel):
     country: str
     timezone: str | None
     kind: str
+    city_name: str | None = None
 
 
 # ---------- 自選看盤 ----------
 
 
+TicketMode = Literal["ticket", "split"]
+
+
 class WatchlistCreate(TripParams):
+    """整張票（單程／來回／多航段）或分段購票（每段各自一張單程票，價格加總）。"""
+
     label: str | None = Field(default=None, max_length=100)
+    ticket_mode: TicketMode = "ticket"
+    # 分段購票每段指定的航司，順序同航段（含第 1 段）；None 代表該段不限航司
+    leg_airlines: Annotated[list[AirlineCode | None], Field(max_length=MAX_EXTRA_LEGS + 1)] = []
     target_price: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
     drop_percent: Decimal | None = Field(default=None, gt=0, le=90, decimal_places=2)
     preferred_airline: AirlineCode | None = None
@@ -250,8 +259,15 @@ class WatchlistCreate(TripParams):
 
     @model_validator(mode="after")
     def _check_threshold(self) -> Self:
-        if self.extra_legs:
-            raise ValueError("看盤追蹤只支援單程或來回行程")
+        if self.ticket_mode == "split":
+            if self.return_date:
+                raise ValueError("分段購票請把回程列為第 2 段，不要使用回程日期")
+            if not self.extra_legs:
+                raise ValueError("分段購票至少需要兩段行程")
+            if self.leg_airlines and len(self.leg_airlines) != 1 + len(self.extra_legs):
+                raise ValueError("每一段都要對應一個航司設定")
+        elif self.leg_airlines:
+            raise ValueError("只有分段購票可以逐段指定航司")
         if self.target_price is None and self.drop_percent is None:
             raise ValueError("請至少設定目標價或相對降幅其中一項")
         if self.min_layover_minutes > self.max_layover_minutes:
@@ -264,6 +280,9 @@ class WatchlistUpdate(BaseModel):
 
     label: str | None = Field(default=None, max_length=100)
     patrol_interval_minutes: PatrolInterval | None = None
+    # 門檻：送 null 代表取消該條件；兩者不可同時為空（在服務層檢查合併後的結果）
+    target_price: Decimal | None = Field(default=None, gt=0, max_digits=10, decimal_places=2)
+    drop_percent: Decimal | None = Field(default=None, gt=0, le=90, decimal_places=2)
 
     @field_validator("label")
     @classmethod
@@ -315,6 +334,9 @@ class WatchlistOut(BaseModel):
     min_layover_minutes: int
     max_layover_minutes: int
     currency: str | None = None
+    ticket_mode: str = "ticket"
+    extra_legs: list[LegIn] = []
+    leg_airlines: list[str | None] = []
     patrol_interval_minutes: int | None = None
     next_check_at: datetime | None = None
     has_webhook: bool = False

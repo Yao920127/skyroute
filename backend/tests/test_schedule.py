@@ -172,3 +172,23 @@ class TestDuePatrol:
             due_only=True,
         )
         assert idle.active == 0 and len(search.calls) == 1
+
+
+class TestEditThresholds:
+    async def test_change_target_and_drop(self, client: httpx.AsyncClient) -> None:
+        watch = (await client.post("/api/watchlists", json=WATCH, headers=USER)).json()["data"]
+        url = f"/api/watchlists/{watch['id']}"
+        updated = (
+            await client.patch(url, json={"target_price": 42.5, "drop_percent": 8}, headers=USER)
+        ).json()["data"]
+        assert updated["target_price"] == "42.50" and updated["drop_percent"] == "8.00"
+
+        only_drop = (await client.patch(url, json={"target_price": None}, headers=USER)).json()[
+            "data"
+        ]
+        assert only_drop["target_price"] is None and only_drop["drop_percent"] == "8.00"
+
+        both_empty = await client.patch(url, json={"drop_percent": None}, headers=USER)
+        assert both_empty.status_code == 422
+        invalid = await client.patch(url, json={"target_price": -1}, headers=USER)
+        assert invalid.status_code == 422

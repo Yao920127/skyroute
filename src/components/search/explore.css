@@ -540,6 +540,7 @@
 
 .split__option {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-sm);
   border: 1px solid var(--border-light);
@@ -690,6 +691,33 @@
 .split__summary .btn {
   border-color: var(--dark-rule);
   color: var(--on-dark);
+}
+
+.split__summary .btn--primary {
+  border-color: transparent;
+  background: var(--canvas);
+  color: var(--primary);
+}
+
+.split__summary .btn--primary:disabled {
+  opacity: 0.45;
+}
+
+.split__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+/* 展開的詳細航班資料佔滿整列，排在選項下方 */
+.split__detail {
+  display: grid;
+  gap: var(--space-md);
+  flex-basis: 100%;
+  margin: 0 12px 12px;
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--soft-stone);
 }
 
 .split__summary .btn:hover:not(:disabled) {

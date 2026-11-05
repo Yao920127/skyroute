@@ -19,6 +19,7 @@ export interface Airport {
   country: string;
   timezone: string | null;
   kind: "airport" | "city";
+  city_name?: string | null;
 }
 
 /** 同一班機中途落地（不換機），例如 BR67 台北→倫敦 經停曼谷 */
@@ -220,6 +221,11 @@ export interface Watchlist extends TripParams {
   min_layover_minutes: number;
   max_layover_minutes: number;
   currency: string | null;
+  /** ticket＝整張票（含多航段）；split＝分段購票（每段各自一張單程票，價格合計） */
+  ticket_mode: WatchTicketMode;
+  extra_legs: Leg[];
+  /** 分段購票每段指定的航司（順序同航段） */
+  leg_airlines: (string | null)[];
   /** 巡檢頻率（分鐘）；null＝每日固定時間 */
   patrol_interval_minutes: number | null;
   next_check_at: string | null;
@@ -244,12 +250,19 @@ export interface WatchlistCreate extends TripParams {
   webhook_url: string | null;
   currency: string;
   patrol_interval_minutes: number | null;
+  ticket_mode: WatchTicketMode;
+  leg_airlines: (string | null)[];
 }
+
+/** 看盤追蹤的購票方式（後端欄位）；和搜尋畫面的 TicketMode（combined/split）不同 */
+export type WatchTicketMode = "ticket" | "split";
 
 /** 只送出要修改的欄位；label 送空字串代表清除名稱 */
 export interface WatchlistUpdate {
   label?: string;
   patrol_interval_minutes?: number | null;
+  target_price?: number | null;
+  drop_percent?: number | null;
 }
 
 export interface PricePoint {

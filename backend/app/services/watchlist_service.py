@@ -60,13 +60,16 @@ async def create_watchlist(
             webhook = validate_webhook_url(payload.webhook_url, allowed_webhook_hosts)
         except ValueError as exc:
             raise ValidationFailed(str(exc)) from exc
-    for code in (payload.origin, payload.destination):
+    codes = {payload.origin, payload.destination}
+    codes.update(c for leg in payload.extra_legs for c in (leg.origin, leg.destination))
+    for code in sorted(codes):
         if not await ensure_airport(session, client, code):
             raise ValidationFailed(f"找不到機場或城市代碼：{code}")
 
     watch = TrackedWatchlist(
         user_identifier=user_id,
         **payload.model_dump(exclude={"webhook_url", "extra_legs"}),
+        extra_legs=[leg.model_dump(mode="json") for leg in payload.extra_legs],
         webhook_url=webhook,
         duffel_token_enc=token_enc,
         token_fingerprint=client.namespace if user_token else None,
@@ -104,6 +107,13 @@ async def update_watchlist(
     fields = payload.model_fields_set
     if "label" in fields:
         watch.label = payload.label
+    if fields & {"target_price", "drop_percent"}:
+        target = payload.target_price if "target_price" in fields else watch.target_price
+        drop = payload.drop_percent if "drop_percent" in fields else watch.drop_percent
+        if target is None and drop is None:
+            raise ValidationFailed("請至少設定目標價或相對降幅其中一項")
+        watch.target_price = target
+        watch.drop_percent = drop
     if "patrol_interval_minutes" in fields:
         if watch.status != WatchStatus.TRACKING:
             raise ValidationFailed("已結束的追蹤無法變更巡檢頻率")

@@ -11,6 +11,7 @@ import { Sheet } from "../ui/Sheet.tsx";
 import { WatchDetail } from "./WatchDetail.tsx";
 import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
 import { LoginPrompt } from "../auth/LoginPrompt.tsx";
+import { routeText, watchLegs } from "../../lib/watchRoute.ts";
 
 type Props = {
   query: UseQueryResult<Watchlist[]>;
@@ -162,7 +163,7 @@ export function Watchboard({ query, needsLogin, onCreate }: Props) {
           {selected && isCompact && (
             <Sheet
               size="full"
-              title={`${selected.origin} → ${selected.destination}`}
+              title={routeText(watchLegs(selected))}
               onClose={() => setSelectedId(null)}
             >
               <WatchDetail

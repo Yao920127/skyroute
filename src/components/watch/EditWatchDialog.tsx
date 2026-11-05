@@ -21,7 +21,14 @@ export function EditWatchDialog({ watch, onClose }: Props) {
   const queryClient = useQueryClient();
   const [label, setLabel] = useState(watch.label ?? "");
   const [interval, setInterval] = useState<number | null>(watch.patrol_interval_minutes);
+  const [target, setTarget] = useState(
+    watch.target_price ? String(Number(watch.target_price)) : "",
+  );
+  const [drop, setDrop] = useState(watch.drop_percent ? String(Number(watch.drop_percent)) : "");
   const isTracking = watch.status === "TRACKING";
+  const currency = watch.currency ?? watch.stats.currency ?? "";
+  const toNumber = (v: string) => (v.trim() ? Number(v) : null);
+  const original = (v: string | null) => (v === null ? null : Number(v));
 
   const save = useMutation({
     mutationFn: (patch: WatchlistUpdate) => api.updateWatchlist(watch.id, patch),
@@ -36,6 +43,9 @@ export function EditWatchDialog({ watch, onClose }: Props) {
   if (isTracking && interval !== watch.patrol_interval_minutes) {
     patch.patrol_interval_minutes = interval;
   }
+  if (toNumber(target) !== original(watch.target_price)) patch.target_price = toNumber(target);
+  if (toNumber(drop) !== original(watch.drop_percent)) patch.drop_percent = toNumber(drop);
+  const hasThreshold = Boolean(target.trim() || drop.trim());
   const hasChanges = Object.keys(patch).length > 0;
 
   const handleSubmit = (e: FormEvent) => {
@@ -56,7 +66,7 @@ export function EditWatchDialog({ watch, onClose }: Props) {
             type="submit"
             form={`${labelId}-form`}
             className="btn btn--primary"
-            disabled={!hasChanges || save.isPending}
+            disabled={!hasChanges || !hasThreshold || save.isPending}
           >
             {save.isPending ? t("edit.saving") : t("edit.save")}
           </button>
@@ -75,6 +85,34 @@ export function EditWatchDialog({ watch, onClose }: Props) {
             onChange={(e) => setLabel(e.target.value)}
           />
         </label>
+        <div className="edit-watch__grid">
+          <label className="field">
+            <span>{t("watch.target", { currency })}</span>
+            <input
+              className="input mono"
+              type="number"
+              inputMode="decimal"
+              min={1}
+              step="0.01"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>{t("watch.drop")}</span>
+            <input
+              className="input mono"
+              type="number"
+              inputMode="decimal"
+              min={0.5}
+              max={90}
+              step="0.5"
+              value={drop}
+              onChange={(e) => setDrop(e.target.value)}
+            />
+          </label>
+        </div>
+        {!hasThreshold && <p className="notice">{t("edit.needThreshold")}</p>}
         <div className="field">
           <span>{t("watch.interval")}</span>
           {isTracking ? (

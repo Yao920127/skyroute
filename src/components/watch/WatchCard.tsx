@@ -2,6 +2,7 @@ import { useI18n } from "../../i18n/i18n.ts";
 import { formatPrice } from "../../lib/currency.ts";
 import { formatPct, relativeTime, trendOf } from "../../lib/format.ts";
 import { nextCheckLabel } from "../../lib/schedule.ts";
+import { legAirlinesText, routeText, watchLegs } from "../../lib/watchRoute.ts";
 import type { Watchlist } from "../../lib/types.ts";
 import { Sparkline } from "./Sparkline.tsx";
 
@@ -14,6 +15,10 @@ type Props = {
 export function WatchCard({ watch, isSelected, onSelect }: Props) {
   const { locale, t } = useI18n();
   const { stats } = watch;
+  const legs = watchLegs(watch);
+  const isMultiLeg = watch.ticket_mode === "split" || watch.extra_legs.length > 0;
+  const airlinesText =
+    watch.ticket_mode === "split" ? legAirlinesText(watch.leg_airlines) : watch.preferred_airline;
   // 新追蹤以設定的幣別記錄；舊資料沿用航空公司原始幣別
   const currency = watch.currency ?? stats.currency;
   const money = (v: string | number | null) => formatPrice(v, currency, locale);
@@ -32,15 +37,18 @@ export function WatchCard({ watch, isSelected, onSelect }: Props) {
         aria-pressed={isSelected}
         onClick={onSelect}
       >
-        <span className="ticker__route mono">
-          {watch.origin}
-          <i aria-hidden="true">⇢</i>
-          {watch.destination}
-        </span>
+        {isMultiLeg ? (
+          <span className="ticker__route ticker__route--multi mono">{routeText(legs)}</span>
+        ) : (
+          <span className="ticker__route mono">
+            {watch.origin}
+            <i aria-hidden="true">⇢</i>
+            {watch.destination}
+          </span>
+        )}
         <span className="ticker__label">
-          {watch.label ??
-            `${watch.departure_date}${watch.return_date ? ` ⇄ ${watch.return_date.slice(5)}` : ""}`}
-          {watch.preferred_airline && <b className="mono"> · {watch.preferred_airline}</b>}
+          {watch.label ?? legs.map((l) => l.departure_date.slice(5)).join(" · ")}
+          {airlinesText && <b className="mono"> · {airlinesText}</b>}
         </span>
 
         <span className="ticker__price mono">{money(stats.latest_price)}</span>
@@ -71,6 +79,9 @@ export function WatchCard({ watch, isSelected, onSelect }: Props) {
           </span>
           {hitTarget && <span className="status status--hit">{t("status.hit")}</span>}
           {watch.uses_own_key && <span className="status status--own">{t("status.ownKey")}</span>}
+          {watch.ticket_mode === "split" && (
+            <span className="status status--own">{t("status.split")}</span>
+          )}
           <span className="ticker__time">
             {relativeTime(stats.last_checked_at, t)}
             {watch.status === "TRACKING" && watch.next_check_at && (

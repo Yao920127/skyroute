@@ -11,7 +11,6 @@ import { useCurrency } from "../../lib/currency.ts";
 import { relativeTime } from "../../lib/format.ts";
 import { DEFAULT_FILTERS, legsOf, oneWayLeg } from "../../lib/searchState.ts";
 import type {
-  Leg,
   RankedOffer,
   SearchResult,
   SearchState,
@@ -128,12 +127,13 @@ export function ExploreView({ state, enabled, onChange, onWatch }: Props) {
       price: Number(item.offer.total_amount),
       currency: item.offer.currency,
     });
-  const watchLeg = (leg: Leg, item: RankedOffer) =>
+  // 分段購票：整個組合追成一筆，每段沿用目前選的航司，門檻看合計價格
+  const watchCombo = (selections: RankedOffer[]) =>
     onWatch({
-      trip: oneWayLeg(state, leg),
-      airline: item.offer.airline_code,
-      price: Number(item.offer.total_amount),
-      currency: item.offer.currency,
+      trip: state,
+      price: selections.reduce((sum, s) => sum + Number(s.offer.total_amount), 0),
+      currency: selections[0]?.offer.currency,
+      split: { airlines: selections.map((s) => s.offer.airline_code) },
     });
 
   return (
@@ -240,7 +240,7 @@ export function ExploreView({ state, enabled, onChange, onWatch }: Props) {
         )}
 
         {mode === "split" ? (
-          <SplitView legs={legs} queries={legQueries} onWatchLeg={watchLeg} />
+          <SplitView legs={legs} queries={legQueries} onWatchCombo={watchCombo} />
         ) : (
           <>
             {combined.isError && (
@@ -259,7 +259,7 @@ export function ExploreView({ state, enabled, onChange, onWatch }: Props) {
                 <OfferRow
                   key={item.offer.id}
                   item={item}
-                  onWatch={state.trip_type === "mc" ? undefined : () => watchFrom(item)}
+                  onWatch={() => watchFrom(item)}
                   isMultiCity={state.trip_type === "mc"}
                 />
               ))}

@@ -231,7 +231,7 @@ class TestWatchCurrency:
         ]
         assert (history[0]["price"], history[0]["currency"]) == ("3000.00", "TWD")
 
-    async def test_watchlist_rejects_multi_city(self, client: httpx.AsyncClient) -> None:
+    async def test_watchlist_accepts_multi_city_ticket(self, client: httpx.AsyncClient) -> None:
         payload = {
             "origin": "TPE",
             "destination": "LON",
@@ -240,7 +240,12 @@ class TestWatchCurrency:
             "extra_legs": [{"origin": "PAR", "destination": "TPE", "departure_date": LEG2}],
         }
         res = await client.post("/api/watchlists", json=payload, headers=USER)
-        assert res.status_code == 422 and "單程或來回" in res.json()["error"]
+        assert res.status_code == 201
+        data = res.json()["data"]
+        assert data["ticket_mode"] == "ticket"
+        assert data["extra_legs"] == [
+            {"origin": "PAR", "destination": "TPE", "departure_date": LEG2}
+        ]
 
 
 class TestErrorLanguage:

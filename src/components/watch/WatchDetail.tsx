@@ -6,6 +6,7 @@ import { api } from "../../lib/api.ts";
 import { formatPrice } from "../../lib/currency.ts";
 import { cabinLabel, dateWithWeekday } from "../../lib/format.ts";
 import { intervalLabel } from "../../lib/schedule.ts";
+import { routeText, watchLegs } from "../../lib/watchRoute.ts";
 import type { Watchlist } from "../../lib/types.ts";
 import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
 import { EditWatchDialog } from "./EditWatchDialog.tsx";
@@ -47,7 +48,9 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
     },
   });
 
-  const route = `${watch.origin} → ${watch.destination}`;
+  const legs = watchLegs(watch);
+  const isMultiLeg = watch.ticket_mode === "split" || watch.extra_legs.length > 0;
+  const route = routeText(legs);
   const handleCancel = async () => {
     const ok = await confirm({
       ...splitMessage(t("detail.stopConfirm", { route })),
@@ -78,7 +81,18 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
       t("detail.rule.via", { v: watch.allowed_transits.join(", ") }),
     watch.excluded_transits.length > 0 &&
       t("detail.rule.avoid", { v: watch.excluded_transits.join(", ") }),
-    watch.preferred_airline && t("detail.rule.airline", { v: watch.preferred_airline }),
+    watch.ticket_mode === "split" &&
+      t("detail.rule.split", {
+        v: legs
+          .map(
+            (l, i) =>
+              `${l.origin}→${l.destination} ${watch.leg_airlines[i] ?? t("watch.anyAirline")}`,
+          )
+          .join("、"),
+      }),
+    watch.ticket_mode !== "split" &&
+      watch.preferred_airline &&
+      t("detail.rule.airline", { v: watch.preferred_airline }),
     watch.has_webhook ? t("detail.rule.webhook") : t("detail.rule.log"),
     watch.status === "TRACKING" &&
       t("detail.rule.interval", { v: intervalLabel(watch.patrol_interval_minutes, t) }),
@@ -100,16 +114,18 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
             )
           ) : (
             <h3 id="detail-title" className="detail__title">
-              <span className="mono">{watch.origin}</span> →{" "}
-              <span className="mono">{watch.destination}</span>
+              <span className="mono">{route}</span>
               {watch.label && <small> {watch.label}</small>}
             </h3>
           )}
           <p className="detail__trip mono">
-            {dateWithWeekday(watch.departure_date, lang)}
-            {watch.return_date
-              ? ` ⇄ ${dateWithWeekday(watch.return_date, lang)}`
-              : ` · ${t("detail.oneWay")}`}{" "}
+            {isMultiLeg
+              ? legs.map((l) => dateWithWeekday(l.departure_date, lang)).join(" · ")
+              : `${dateWithWeekday(watch.departure_date, lang)}${
+                  watch.return_date
+                    ? ` ⇄ ${dateWithWeekday(watch.return_date, lang)}`
+                    : ` · ${t("detail.oneWay")}`
+                }`}{" "}
             · {watch.adults}A{watch.children ? ` ${watch.children}C` : ""} ·{" "}
             {cabinLabel(watch.cabin_class, t)}
             {currency && ` · ${currency}`}

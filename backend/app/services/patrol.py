@@ -10,6 +10,7 @@ Worker 每分鐘觸發一次，只處理「到期」（next_check_at 已到）�
 """
 
 import asyncio
+import hashlib
 import logging
 from collections import Counter, defaultdict
 from dataclasses import dataclass
@@ -36,7 +37,7 @@ from app.services.cache import Cache
 from app.services.credentials import TokenCipher
 from app.services.fx import FxRates, FxService, to_currency
 from app.services.schedule import PatrolSchedule
-from app.services.search_service import RouteQuery, SearchService
+from app.services.search_service import Leg, RouteQuery, SearchService
 
 log = logging.getLogger(__name__)
 
@@ -63,20 +64,58 @@ class GroupKey(NamedTuple):
     key_fingerprint: str | None
 
 
-def route_query_for(watch: TrackedWatchlist) -> RouteQuery:
+def stored_legs(watch: TrackedWatchlist) -> tuple[Leg, ...]:
+    """第 2 段以後的航段（資料庫以 JSON 保存）。"""
+    return tuple(
+        Leg(
+            origin=leg["origin"],
+            destination=leg["destination"],
+            departure_date=date.fromisoformat(leg["departure_date"]),
+        )
+        for leg in (watch.extra_legs or [])
+    )
+
+
+def _query(watch: TrackedWatchlist, first: Leg, **extra: object) -> RouteQuery:
     return RouteQuery(
-        origin=watch.origin,
-        destination=watch.destination,
-        departure_date=watch.departure_date,
-        return_date=watch.return_date,
+        origin=first.origin,
+        destination=first.destination,
+        departure_date=first.departure_date,
         adults=watch.adults,
         children=watch.children,
         cabin_class=watch.cabin_class,
         max_connections=watch.max_stops,
+        **extra,
     )
 
 
-def filter_for(watch: TrackedWatchlist) -> TopologyFilter:
+def first_leg(watch: TrackedWatchlist) -> Leg:
+    return Leg(
+        origin=watch.origin, destination=watch.destination, departure_date=watch.departure_date
+    )
+
+
+def route_query_for(watch: TrackedWatchlist) -> RouteQuery:
+    """整張票：單程、來回或多航段，一次查詢。"""
+    return _query(
+        watch, first_leg(watch), return_date=watch.return_date, extra_legs=stored_legs(watch)
+    )
+
+
+def queries_for(watch: TrackedWatchlist) -> list[RouteQuery]:
+    """分段購票：每一段各自查單程；整張票：一個查詢。"""
+    if watch.ticket_mode == "split":
+        return [_query(watch, leg) for leg in (first_leg(watch), *stored_legs(watch))]
+    return [route_query_for(watch)]
+
+
+def leg_airline(watch: TrackedWatchlist, index: int) -> str | None:
+    airlines = watch.leg_airlines or []
+    return airlines[index] if index < len(airlines) else watch.preferred_airline
+
+
+def filter_for(watch: TrackedWatchlist, airline: str | None = None) -> TopologyFilter:
+    chosen = airline if airline is not None else watch.preferred_airline
     return TopologyFilter(
         # 看盤畫面把 max_stops=0 標示為「僅直飛」，因此同樣排除中途經停的航班
         direct_only=watch.max_stops == 0,
@@ -85,19 +124,74 @@ def filter_for(watch: TrackedWatchlist) -> TopologyFilter:
         excluded_hubs=frozenset(watch.excluded_transits or []),
         min_layover_minutes=watch.min_layover_minutes,
         max_layover_minutes=watch.max_layover_minutes,
-        airlines=frozenset([watch.preferred_airline]) if watch.preferred_airline else frozenset(),
+        airlines=frozenset([chosen]) if chosen else frozenset(),
     )
 
 
+def _cheapest(offers: tuple[FlightOffer, ...], rule: TopologyFilter) -> FlightOffer | None:
+    return min(apply_topology(offers, rule), key=lambda o: o.total_amount, default=None)
+
+
 def best_offer_for(watch: TrackedWatchlist, offers: tuple[FlightOffer, ...]) -> FlightOffer | None:
-    matched = apply_topology(offers, filter_for(watch))
-    return min(matched, key=lambda o: o.total_amount, default=None)
+    return _cheapest(offers, filter_for(watch))
+
+
+@dataclass(frozen=True)
+class Priced:
+    """一筆追蹤本次的價格：整張票為一個報價；分段購票為每段最便宜報價的合計。"""
+
+    offers: tuple[FlightOffer, ...]
+
+    @property
+    def total_amount(self) -> Decimal:
+        return sum((o.total_amount for o in self.offers), Decimal(0))
+
+    @property
+    def currency(self) -> str:
+        return self.offers[0].currency
+
+    @property
+    def airline_code(self) -> str:
+        return "+".join(o.airline_code for o in self.offers)
+
+    @property
+    def duration_minutes(self) -> int:
+        return sum(o.total_duration_minutes for o in self.offers)
+
+    @property
+    def stops(self) -> int:
+        return max(o.max_stops for o in self.offers)
+
+
+def price_watch(
+    watch: TrackedWatchlist, offer_sets: list[tuple[FlightOffer, ...]]
+) -> Priced | None:
+    """任何一段找不到符合條件的航班，整筆就視為本次無價格。"""
+    if watch.ticket_mode != "split":
+        best = best_offer_for(watch, offer_sets[0])
+        return Priced((best,)) if best else None
+    picks: list[FlightOffer] = []
+    for index, offers in enumerate(offer_sets):
+        best = _cheapest(offers, filter_for(watch, leg_airline(watch, index)))
+        if best is None:
+            return None
+        picks.append(best)
+    return Priced(tuple(picks))
+
+
+def route_hash_for(queries: list[RouteQuery]) -> str:
+    if len(queries) == 1:
+        return queries[0].route_hash
+    joined = "|".join(q.route_hash for q in queries)
+    return hashlib.sha256(joined.encode()).hexdigest()
 
 
 def group_by_route(watches: list[TrackedWatchlist]) -> dict[GroupKey, list[TrackedWatchlist]]:
+    """同一個查詢（含分段購票的單段）只打一次 Duffel，供所有需要它的追蹤共用。"""
     groups: dict[GroupKey, list[TrackedWatchlist]] = defaultdict(list)
     for watch in watches:
-        groups[GroupKey(route_query_for(watch), watch.token_fingerprint)].append(watch)
+        for query in queries_for(watch):
+            groups[GroupKey(query, watch.token_fingerprint)].append(watch)
     return dict(groups)
 
 
@@ -145,50 +239,42 @@ async def process_watch(
     ctx: PatrolContext,
     session: AsyncSession,
     watch: TrackedWatchlist,
-    query: RouteQuery,
-    offers: tuple[FlightOffer, ...],
+    priced: Priced,
+    route_hash: str,
     now: datetime,
     stats: Counter[str],
-    fx: FxRates | None = None,
 ) -> None:
-    if watch.currency and fx is not None:
-        # 換算成使用者設定的幣別，歷史價格與門檻比對都用同一幣別
-        offers = tuple(to_currency(o, fx, watch.currency) for o in offers)
-    offer = best_offer_for(watch, offers)
-    if offer is None:
-        log.info("標的 %s 本次無符合條件的航班", watch.id)
-        return
-
     baseline = await _baseline_avg(session, watch.id, now)  # 寫入前計算，不含本次價格
+    amount = priced.total_amount
     record = PriceHistory(
         watchlist_id=watch.id,
-        route_hash=query.route_hash,
-        airline_code=offer.airline_code,
-        price=offer.total_amount,
-        currency=offer.currency,
-        duration_minutes=offer.total_duration_minutes,
-        stops=offer.max_stops,
+        route_hash=route_hash,
+        airline_code=priced.airline_code[:20],
+        price=amount,
+        currency=priced.currency,
+        duration_minutes=priced.duration_minutes,
+        stops=priced.stops,
         recorded_at=now,
     )
     session.add(record)
     await session.flush()
     stats["prices_recorded"] += 1
 
-    reason = threshold_reason(offer.total_amount, watch.target_price, watch.drop_percent, baseline)
+    reason = threshold_reason(amount, watch.target_price, watch.drop_percent, baseline)
     if reason is None:
         return
     last = await _last_alert(session, watch.id)
     if in_cooldown(
         last.sent_at if last else None,
         last.triggered_price if last else None,
-        offer.total_amount,
+        amount,
         now,
         ctx.cooldown_hours,
     ):
         stats["alerts_suppressed"] += 1
         return
     try:
-        channel = await ctx.notifier.send(watch, offer, reason)
+        channel = await ctx.notifier.send(watch, priced.offers, reason)
     except (NotificationError, ValueError) as exc:
         log.error("標的 %s 告警推播失敗：%s", watch.id, exc)
         stats["failures"] += 1
@@ -197,8 +283,8 @@ async def process_watch(
         AlertHistory(
             watchlist_id=watch.id,
             price_history_id=record.id,
-            triggered_price=offer.total_amount,
-            currency=offer.currency,
+            triggered_price=amount,
+            currency=priced.currency,
             reason=reason,
             channel=channel,
             sent_at=now,
@@ -207,34 +293,28 @@ async def process_watch(
     stats["alerts_sent"] += 1
 
 
-async def process_group(
-    ctx: PatrolContext,
-    key: GroupKey,
-    watches: list[TrackedWatchlist],
-    now: datetime,
-    stats: Counter[str],
-) -> None:
-    query = key.query
+FetchResults = dict[GroupKey, tuple[FlightOffer, ...] | None]
+
+
+async def fetch_group(
+    ctx: PatrolContext, key: GroupKey, watches: list[TrackedWatchlist], stats: Counter[str]
+) -> tuple[FlightOffer, ...] | None:
     try:
         client = client_for(ctx, key, watches)
         # 巡檢一律取最新報價並回寫快取
-        outcome = await ctx.search.fetch(query, client, refresh=True)
+        outcome = await ctx.search.fetch(key.query, client, refresh=True)
     except (DuffelError, MissingCredentialsError) as exc:
-        log.error("巡檢查詢失敗 %s：%s", query.cache_key, exc)
+        log.error("巡檢查詢失敗 %s：%s", key.query.cache_key, exc)
         stats["failures"] += 1
-        return
+        return None
     stats["api_calls"] += 1
-    fx = await ctx.fx.rates() if any(w.currency for w in watches) else None
-    async with ctx.sessions() as session:
-        for watch in watches:
-            await process_watch(ctx, session, watch, query, outcome.offers, now, stats, fx)
-        await session.commit()
+    return outcome.offers
 
 
 async def _consume(
     ctx: PatrolContext,
     queue: asyncio.Queue[tuple[GroupKey, list[TrackedWatchlist]]],
-    now: datetime,
+    results: FetchResults,
     stats: Counter[str],
 ) -> None:
     while True:
@@ -243,12 +323,46 @@ async def _consume(
         except asyncio.QueueEmpty:
             return
         try:
-            await process_group(ctx, key, watches, now, stats)
+            results[key] = await fetch_group(ctx, key, watches, stats)
         except Exception:  # 單一群組失敗不可中斷整個巡檢
             log.exception("巡檢群組 %s 發生未預期錯誤", key.query.cache_key)
             stats["failures"] += 1
+            results[key] = None
         finally:
             queue.task_done()
+
+
+async def evaluate(
+    ctx: PatrolContext,
+    watches: list[TrackedWatchlist],
+    results: FetchResults,
+    now: datetime,
+    stats: Counter[str],
+) -> None:
+    """所有查詢完成後，逐筆算出價格（分段購票要等每一段都查到）並寫入歷史、判斷告警。"""
+    fx: FxRates | None = await ctx.fx.rates() if any(w.currency for w in watches) else None
+    async with ctx.sessions() as session:
+        for watch in watches:
+            queries = queries_for(watch)
+            offer_sets = [results.get(GroupKey(q, watch.token_fingerprint)) for q in queries]
+            if any(offers is None for offers in offer_sets):
+                continue  # 查詢失敗已計入 failures
+            sets = [offers for offers in offer_sets if offers is not None]
+            if watch.currency and fx is not None:
+                # 換算成使用者設定的幣別，歷史價格與門檻比對都用同一幣別
+                sets = [tuple(to_currency(o, fx, watch.currency) for o in s) for s in sets]
+            priced = price_watch(watch, sets)
+            if priced is None:
+                log.info("標的 %s 本次無符合條件的航班", watch.id)
+                continue
+            try:
+                await process_watch(
+                    ctx, session, watch, priced, route_hash_for(queries), now, stats
+                )
+            except Exception:
+                log.exception("標的 %s 寫入價格失敗", watch.id)
+                stats["failures"] += 1
+        await session.commit()
 
 
 async def run_patrol(
@@ -298,7 +412,9 @@ async def run_patrol(
         queue: asyncio.Queue[tuple[GroupKey, list[TrackedWatchlist]]] = asyncio.Queue()
         for item in groups.items():
             queue.put_nowait(item)
-        await asyncio.gather(*(_consume(ctx, queue, now, stats) for _ in range(consumers)))
+        results: FetchResults = {}
+        await asyncio.gather(*(_consume(ctx, queue, results, stats) for _ in range(consumers)))
+        await evaluate(ctx, watches, results, now, stats)
         await reschedule(ctx, watches, now)
     finally:
         await cache.release_lock(lock_name, token)

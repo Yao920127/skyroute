@@ -20,6 +20,16 @@ _ADDITIVE_MIGRATIONS = (
     "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS patrol_interval_minutes INTEGER",
     "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS next_check_at TIMESTAMPTZ",
     "CREATE INDEX IF NOT EXISTS ix_watchlists_next_check ON tracked_watchlists (next_check_at)",
+    "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS ticket_mode VARCHAR(10) "
+    "NOT NULL DEFAULT 'ticket'",
+    "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS extra_legs JSONB "
+    "NOT NULL DEFAULT '[]'::jsonb",
+    "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS leg_airlines JSONB "
+    "NOT NULL DEFAULT '[]'::jsonb",
+    "ALTER TABLE price_history ALTER COLUMN airline_code TYPE VARCHAR(20)",
+    "ALTER TABLE airports ADD COLUMN IF NOT EXISTS city_name VARCHAR(100)",
+    "ALTER TABLE airports ADD COLUMN IF NOT EXISTS size_rank INTEGER NOT NULL DEFAULT 2",
+    "ALTER TABLE airports ADD COLUMN IF NOT EXISTS search_text TEXT",
 )
 
 

@@ -6,7 +6,8 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 
-from app.api.deps import ContainerDep, DuffelDep, SessionDep
+from app.api.deps import ContainerDep, DuffelDep, SessionDep, UserTokenDep
+from app.integrations.duffel_client import DuffelClient, MissingCredentialsError
 from app.schemas import (
     AirportOut,
     ApiResponse,
@@ -15,18 +16,34 @@ from app.schemas import (
     SearchRequest,
     SearchResult,
 )
-from app.services.airport_service import expand_code, search_airports
+from app.services.airport_service import expand_code, fold, search_with_fallback
 from app.services.explore_service import run_search, stream_matrix
 from app.services.fx import SUPPORTED_CURRENCIES
 
 router = APIRouter(prefix="/api", tags=["explore"])
 
 
+PLACE_MISS_TTL_S = 24 * 60 * 60
+
+
 @router.get("/airports", response_model=ApiResponse[list[AirportOut]])
 async def airports(
-    session: SessionDep, q: Annotated[str, Query(min_length=1, max_length=40)]
+    session: SessionDep,
+    container: ContainerDep,
+    user_token: UserTokenDep,
+    q: Annotated[str, Query(min_length=1, max_length=40)],
 ) -> ApiResponse[list[AirportOut]]:
-    rows = await search_airports(session, q)
+    """先查本機的全球機場對照表；找不到時才問 Duffel（同一個查不到的字一天只問一次）。"""
+    miss_key = f"places-miss:{fold(q.strip())}"
+    client: DuffelClient | None = None
+    if await container.cache.get(miss_key) is None:
+        try:
+            client = container.gateway.client(user_token)
+        except MissingCredentialsError:
+            client = None
+    rows = await search_with_fallback(session, client, q)
+    if not rows and client is not None:
+        await container.cache.set(miss_key, "1", PLACE_MISS_TTL_S)
     return ApiResponse(data=[AirportOut.model_validate(r) for r in rows])
 
 

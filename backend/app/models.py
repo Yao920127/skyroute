@@ -41,6 +41,11 @@ class Airport(Base):
     timezone: Mapped[str | None] = mapped_column(String(50))
     # airport：實體機場；city：城市聚合代碼（如 TYO → HND/NRT）
     kind: Mapped[str] = mapped_column(String(10), default="airport", server_default="airport")
+    city_name: Mapped[str | None] = mapped_column(String(100))
+    # 排序用：0＝內建常用／城市、1＝大型、2＝中型、3＝小型機場
+    size_rank: Mapped[int] = mapped_column(Integer, default=2, server_default="2")
+    # 搜尋用：代碼＋中英文名稱＋城市，去除重音並轉小寫（reykjavik 可找到 Reykjavík）
+    search_text: Mapped[str | None] = mapped_column(Text)
 
 
 class User(Base):
@@ -90,6 +95,14 @@ class TrackedWatchlist(Base):
     currency: Mapped[str | None] = mapped_column(String(3))
     duffel_token_enc: Mapped[str | None] = mapped_column(Text)
     token_fingerprint: Mapped[str | None] = mapped_column(String(16))
+    # ticket＝整張票（可含多航段 extra_legs）；split＝分段購票：每段各查單程、合計價格，可混搭航司
+    ticket_mode: Mapped[str] = mapped_column(String(10), default="ticket", server_default="ticket")
+    # 第 2 段以後：[{origin, destination, departure_date}]
+    extra_legs: Mapped[list[dict[str, str]]] = mapped_column(
+        JSONB, default=list, server_default="[]"
+    )
+    # 分段購票時每段指定的航司（與航段一一對應，None＝不限）
+    leg_airlines: Mapped[list[str | None]] = mapped_column(JSONB, default=list, server_default="[]")
     # 巡檢頻率（分鐘）；NULL＝每日固定時間。next_check_at 為下一次應巡檢的時間
     patrol_interval_minutes: Mapped[int | None] = mapped_column(Integer)
     next_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -111,7 +124,8 @@ class PriceHistory(Base):
         ForeignKey("tracked_watchlists.id", ondelete="CASCADE"), index=True
     )
     route_hash: Mapped[str] = mapped_column(String(64), index=True)
-    airline_code: Mapped[str] = mapped_column(String(3))
+    # 分段購票會記錄多家航司，例如 CZ+BR
+    airline_code: Mapped[str] = mapped_column(String(20))
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     currency: Mapped[str] = mapped_column(String(3), default="TWD", server_default="TWD")
     duration_minutes: Mapped[int] = mapped_column(Integer)

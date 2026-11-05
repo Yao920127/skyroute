@@ -36,7 +36,7 @@ Backend commands, run from `backend/` with uv and Python 3.12:
 ```bash
 uv sync
 uv run uvicorn app.main:app_factory --factory --port 8000 --reload --reload-dir app
-uv run python -m app.worker --once          # run one patrol and exit (without --once: daily scheduler)
+uv run python -m app.worker --once          # patrol every watch once and exit (without --once: per-minute scheduler)
 uv run ruff check app tests && uv run ruff format --check app tests
 uv run mypy app                             # strict
 uv run pytest --cov                         # CI fails below 80% coverage
@@ -121,6 +121,25 @@ The fare matrix streams NDJSON:
 - Alerts are in `services/alerts.py` and have a 24-hour cooldown.
 - A Redis lock (`skyroute:lock:patrol`) ensures only one patrol runs at a time.
 - User Duffel keys are stored Fernet-encrypted in `tracked_watchlists.duffel_token_enc`. The encryption key is derived from `SECRET_KEY`.
+
+### Airports, fake-offer filter, multi-leg watches
+
+- **Airports** (`services/airport_service.py`): seeded from three files, in order of precedence:
+  - `data/airports.json`: curated, with city codes and timezones.
+  - `data/airports_zh.json`: Traditional Chinese names.
+  - `data/airports_world.json`: about 4,000 airports from OurAirports, regenerated with `scripts/build_airports.py`.
+
+  Search matches the accent-folded `search_text`. When nothing matches locally, `/api/airports` asks Duffel `/places/suggestions` and stores the results; misses are cached for a day. Tests call `seed_airports(..., include_world=False)` for speed.
+
+- **Fake-offer filter** (`services/plausibility.py`): applied in `SearchService.fetch`, including on cache hits. It drops **simulated** offers that have a segment where neither the marketing nor the operating carrier's home country (or region: Europe, US plus territories) is at either end. Live offers, codeshares, and unknown airlines are kept.
+- **Multi-leg watches**:
+  - `ticket_mode="ticket"` is one Duffel query; it can include `extra_legs` for multi-city.
+  - `ticket_mode="split"` makes one one-way query per leg, with optional `leg_airlines`, and records the summed price as `airline_code` like `CZ+BR`.
+  - The patrol fetches every distinct query first (`FetchResults`), then prices each watch in `evaluate`.
+
+### Patrol scheduling
+
+The worker ticks every 60s and patrols only watches whose `next_check_at` has passed. Intervals are set per watch (`services/schedule.py`): `None` means daily at `PATROL_DAILY_AT`. Intervals under 30 minutes require the user's own Duffel key.
 
 ### Google sign-in and accounts
 

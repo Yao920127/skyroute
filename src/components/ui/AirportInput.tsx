@@ -83,7 +83,9 @@ export function AirportInput({ label, value, onChange, size = "hero", className 
       {a.kind === "city" ? <PinIcon /> : <PlaneIcon />}
       <span className="sc-command-item__code">{a.iata_code}</span>
       <span className="sc-command-item__name">{nameOf(a)}</span>
-      <span className="sc-command-item__meta">{a.country}</span>
+      <span className="sc-command-item__meta">
+        {a.kind !== "city" && a.city_name ? `${a.city_name} · ${a.country}` : a.country}
+      </span>
     </Command.Item>
   );
 

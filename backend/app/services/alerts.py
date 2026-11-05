@@ -1,6 +1,7 @@
 """告警判斷（目標價／相對降幅）、24 小時冷卻機制與 Webhook 推播。"""
 
 import logging
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Literal
@@ -62,23 +63,42 @@ def validate_webhook_url(url: str, allowed_hosts: list[str]) -> str:
     return url.strip()
 
 
-def format_message(watch: TrackedWatchlist, offer: FlightOffer, reason: AlertReason) -> str:
-    trip = f"{watch.origin} → {watch.destination} {watch.departure_date.isoformat()}"
-    if watch.return_date:
-        trip += f"（回程 {watch.return_date.isoformat()}）"
+def _trip_text(watch: TrackedWatchlist) -> str:
+    legs = [(watch.origin, watch.destination, watch.departure_date.isoformat())]
+    legs += [(x["origin"], x["destination"], x["departure_date"]) for x in watch.extra_legs or []]
+    if len(legs) == 1:
+        trip = f"{watch.origin} → {watch.destination} {watch.departure_date.isoformat()}"
+        return trip + (f"（回程 {watch.return_date.isoformat()}）" if watch.return_date else "")
+    return "、".join(f"{o} → {d} {day}" for o, d, day in legs)
+
+
+def format_message(
+    watch: TrackedWatchlist,
+    offers: FlightOffer | Sequence[FlightOffer],
+    reason: AlertReason,
+) -> str:
+    """offers 為整張票的單一報價，或分段購票每一段的報價（價格為合計）。"""
+    picks = [offers] if isinstance(offers, FlightOffer) else list(offers)
+    total = sum((o.total_amount for o in picks), Decimal(0))
     why = (
         f"已低於目標價 {watch.target_price}"
         if reason == "target"
         else f"較 7 日均價下跌 ≥ {watch.drop_percent}%"
     )
-    first = offer.slices[0]
-    flights = " / ".join(seg.flight_number for seg in first.segments)
-    return (
-        f"✈️ SkyRoute 低價告警：{trip}\n"
-        f"最新價格 {offer.total_amount} {offer.currency}，{why}\n"
-        f"{offer.airline_name}｜{flights}｜去程 {first.departing_at.replace('T', ' ')}"
-        f"｜轉機 {first.stops} 次"
-    )
+    label = "分段購票合計" if watch.ticket_mode == "split" else "最新價格"
+    lines = [
+        f"✈️ SkyRoute 低價告警：{_trip_text(watch)}",
+        f"{label} {total} {picks[0].currency}，{why}",
+    ]
+    for offer in picks:
+        first = offer.slices[0]
+        flights = " / ".join(seg.flight_number for seg in first.segments)
+        prefix = f"{first.origin}→{first.destination} " if len(picks) > 1 else ""
+        lines.append(
+            f"{prefix}{offer.airline_name}｜{flights}｜去程 {first.departing_at.replace('T', ' ')}"
+            f"｜轉機 {first.stops} 次"
+        )
+    return "\n".join(lines)
 
 
 class Notifier:
@@ -86,9 +106,14 @@ class Notifier:
         self._http = http
         self._allowed_hosts = allowed_hosts
 
-    async def send(self, watch: TrackedWatchlist, offer: FlightOffer, reason: AlertReason) -> str:
+    async def send(
+        self,
+        watch: TrackedWatchlist,
+        offers: FlightOffer | Sequence[FlightOffer],
+        reason: AlertReason,
+    ) -> str:
         """回傳實際使用的通知管道；Webhook 失敗時拋出 NotificationError。"""
-        message = format_message(watch, offer, reason)
+        message = format_message(watch, offers, reason)
         if not watch.webhook_url:
             log.info("告警（未設定 webhook，僅記錄）：%s", message.replace("\n", " | "))
             return "log"

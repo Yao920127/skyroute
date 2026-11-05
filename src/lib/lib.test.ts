@@ -26,6 +26,7 @@ import {
 } from "./searchState.ts";
 import { intervalKey, isIntervalAllowed, nextCheckLabel, parseIntervalKey } from "./schedule.ts";
 import { sparklinePath } from "./sparkline.ts";
+import { legAirlinesText, routeText, watchLegs } from "./watchRoute.ts";
 import { stopAirports, stopsText } from "./stops.ts";
 import type { MatrixCell } from "./types.ts";
 
@@ -307,5 +308,29 @@ describe("patrol schedule", () => {
     const now = new Date(2026, 10, 6, 9, 0);
     expect(nextCheckLabel(new Date(2026, 10, 6, 14, 30).toISOString(), now)).toBe("14:30");
     expect(nextCheckLabel(new Date(2026, 10, 7, 3, 0).toISOString(), now)).toBe("11/7 03:00");
+  });
+});
+
+describe("watch route", () => {
+  const leg = (origin: string, destination: string) => ({
+    origin,
+    destination,
+    departure_date: "2026-12-05",
+  });
+
+  it("expands round trips and extra legs", () => {
+    const rt = watchLegs({ ...leg("TPE", "BKK"), return_date: "2026-12-12", extra_legs: [] });
+    expect(rt.map((l) => `${l.origin}-${l.destination}`)).toEqual(["TPE-BKK", "BKK-TPE"]);
+  });
+
+  it("chains connected legs and separates open jaws", () => {
+    expect(routeText([leg("TPE", "BKK"), leg("BKK", "TPE")])).toBe("TPE → BKK → TPE");
+    expect(routeText([leg("TPE", "LON"), leg("PAR", "TPE")])).toBe("TPE → LON · PAR → TPE");
+  });
+
+  it("formats per-leg airlines", () => {
+    expect(legAirlinesText(["CZ", "BR"])).toBe("CZ + BR");
+    expect(legAirlinesText(["CZ", null])).toBe("CZ + —");
+    expect(legAirlinesText([null, null])).toBeNull();
   });
 });

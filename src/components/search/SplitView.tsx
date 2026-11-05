@@ -7,11 +7,13 @@ import { dateWithWeekday, dayOffset, formatDuration, localTime } from "../../lib
 import { stopsText } from "../../lib/stops.ts";
 import type { Leg, RankedOffer, SearchResult } from "../../lib/types.ts";
 import { ApiErrorNotice } from "../settings/ApiErrorNotice.tsx";
+import { OfferDetail } from "./OfferDetail.tsx";
 
 type Props = {
   legs: Leg[];
   queries: UseQueryResult<SearchResult>[];
-  onWatchLeg: (leg: Leg, item: RankedOffer) => void;
+  /** 把目前選好的組合（每段一班）整個加入看盤，追蹤合計價格 */
+  onWatchCombo: (selections: RankedOffer[]) => void;
 };
 
 const PREVIEW = 6;
@@ -28,10 +30,12 @@ function cheapestId(result: SearchResult | undefined): string | null {
  * 分段購票：每段各自是單程票，可以自由搭配航司（例如去程華航、回程長榮）。
  * 底部固定一條合計列，顯示目前組合的總價與混搭航司數。
  */
-export function SplitView({ legs, queries, onWatchLeg }: Props) {
+export function SplitView({ legs, queries, onWatchCombo }: Props) {
   const { lang, locale, t } = useI18n();
   const [picked, setPicked] = useState<Record<number, string>>({});
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  // 展開詳細航班資料的選項（以報價 ID 記錄）
+  const [openDetail, setOpenDetail] = useState<string | null>(null);
 
   const selectedFor = (i: number): RankedOffer | undefined => {
     const result = queries[i]?.data;
@@ -134,10 +138,21 @@ export function SplitView({ legs, queries, onWatchLeg }: Props) {
                     <button
                       type="button"
                       className="btn btn--ghost split__watch"
-                      onClick={() => onWatchLeg(leg, item)}
+                      aria-expanded={openDetail === item.offer.id}
+                      aria-controls={`split-detail-${item.offer.id}`}
+                      onClick={() =>
+                        setOpenDetail((id) => (id === item.offer.id ? null : item.offer.id))
+                      }
                     >
-                      {t("split.watchLeg")}
+                      {openDetail === item.offer.id ? t("offer.collapse") : t("split.details")}
                     </button>
+                    {openDetail === item.offer.id && (
+                      <OfferDetail
+                        id={`split-detail-${item.offer.id}`}
+                        offer={item.offer}
+                        className="split__detail"
+                      />
+                    )}
                   </li>
                 );
               })}
@@ -186,14 +201,24 @@ export function SplitView({ legs, queries, onWatchLeg }: Props) {
             <span className="split__mixed">{t("split.mixed", { n: airlines.size })}</span>
           )}
         </div>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => setPicked({})}
-          disabled={Object.keys(picked).length === 0}
-        >
-          {t("split.cheapest")}
-        </button>
+        <div className="split__actions">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => setPicked({})}
+            disabled={Object.keys(picked).length === 0}
+          >
+            {t("split.cheapest")}
+          </button>
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={!isComplete}
+            onClick={() => onWatchCombo(selections as RankedOffer[])}
+          >
+            {t("split.watchCombo")}
+          </button>
+        </div>
       </div>
     </section>
   );

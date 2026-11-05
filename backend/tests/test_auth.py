@@ -89,7 +89,7 @@ async def container(settings: Settings) -> AsyncIterator[Container]:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     async with built.sessions() as session:
-        await seed_airports(session)
+        await seed_airports(session, include_world=False)
     await built.cache.set(CACHE_KEY, TEST_FX.model_dump_json(), 3600)
     yield built
     await built.close()
