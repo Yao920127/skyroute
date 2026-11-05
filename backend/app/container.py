@@ -14,6 +14,7 @@ from app.services.cache import Cache, create_cache
 from app.services.credentials import TokenCipher
 from app.services.fx import FxService
 from app.services.patrol import PatrolContext
+from app.services.schedule import PatrolSchedule
 from app.services.search_service import SearchService
 
 
@@ -41,7 +42,12 @@ class Container:
             fx=self.fx,
             notifier=self.notifier,
             cooldown_hours=self.settings.alert_cooldown_hours,
+            schedule=self.schedule,
         )
+
+    @property
+    def schedule(self) -> PatrolSchedule:
+        return PatrolSchedule(self.settings.patrol_daily_at, self.settings.patrol_timezone)
 
     async def close(self) -> None:
         await self.duffel_http.aclose()

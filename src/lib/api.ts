@@ -19,6 +19,7 @@ import type {
   TripParams,
   Watchlist,
   WatchlistCreate,
+  WatchlistUpdate,
 } from "./types.ts";
 import { getUserId } from "./user.ts";
 
@@ -117,6 +118,9 @@ export const api = {
 
   createWatchlist: (payload: WatchlistCreate) =>
     request<Watchlist>("/api/watchlists", { method: "POST", body: JSON.stringify(payload) }),
+
+  updateWatchlist: (id: string, patch: WatchlistUpdate) =>
+    request<Watchlist>(`/api/watchlists/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
 
   cancelWatchlist: (id: string) =>
     request<Watchlist>(`/api/watchlists/${id}`, { method: "DELETE" }),

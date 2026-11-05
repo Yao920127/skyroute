@@ -4,7 +4,12 @@ import type { ReactNode } from "react";
 import "./shadcn.css";
 import { usePortalContainer } from "./portal.ts";
 
-export type SelectOption = { value: string; label: ReactNode; description?: string };
+export type SelectOption = {
+  value: string;
+  label: ReactNode;
+  description?: string;
+  disabled?: boolean;
+};
 
 type Props = {
   value: string;
@@ -62,6 +67,7 @@ export function Select({
               <SelectPrimitive.Item
                 key={option.value}
                 value={option.value}
+                disabled={option.disabled}
                 className="sc-select-item"
               >
                 <span className="sc-select-item__indicator">

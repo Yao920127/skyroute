@@ -17,6 +17,9 @@ _ADDITIVE_MIGRATIONS = (
     "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS duffel_token_enc TEXT",
     "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS token_fingerprint VARCHAR(16)",
     "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS currency VARCHAR(3)",
+    "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS patrol_interval_minutes INTEGER",
+    "ALTER TABLE tracked_watchlists ADD COLUMN IF NOT EXISTS next_check_at TIMESTAMPTZ",
+    "CREATE INDEX IF NOT EXISTS ix_watchlists_next_check ON tracked_watchlists (next_check_at)",
 )
 
 

@@ -1,10 +1,12 @@
-"""每日看盤巡檢與自動失效流程（Offline Pipeline）。
+"""看盤巡檢與自動失效流程（Offline Pipeline）。
 
+Worker 每分鐘觸發一次，只處理「到期」（next_check_at 已到）的追蹤；手動巡檢則處理全部。
 1. 出發日已過的追蹤標的 → EXPIRED（不再輪詢）
-2. 讀取有效清單，依「航線 + 日期 + 乘客 + 艙等 + 轉機上限」去重聚合
+2. 讀取要巡檢的清單，依「航線 + 日期 + 乘客 + 艙等 + 轉機上限」去重聚合
 3. 推入佇列，由多個 consumer 受控消費（對外呼叫經過令牌桶節流）
 4. 每個標的套用自己的拓撲條件取最低價 → 寫入 price_history
 5. 比對目標價 / 7 日均價降幅 → 檢查 24 小時冷卻 → 推播並寫入 alert_history
+6. 依各自的頻率排定下一次巡檢時間（失敗也照排，避免每分鐘重試耗盡配額）
 """
 
 import asyncio
@@ -15,7 +17,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import NamedTuple
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import SessionFactory
@@ -33,6 +35,7 @@ from app.services.alerts import NotificationError, Notifier, in_cooldown, thresh
 from app.services.cache import Cache
 from app.services.credentials import TokenCipher
 from app.services.fx import FxRates, FxService, to_currency
+from app.services.schedule import PatrolSchedule
 from app.services.search_service import RouteQuery, SearchService
 
 log = logging.getLogger(__name__)
@@ -50,6 +53,7 @@ class PatrolContext:
     fx: FxService
     notifier: Notifier
     cooldown_hours: int
+    schedule: PatrolSchedule
 
 
 class GroupKey(NamedTuple):
@@ -255,8 +259,12 @@ async def run_patrol(
     today: date | None = None,
     now: datetime | None = None,
     owner: str | None = None,
+    due_only: bool = False,
 ) -> PatrolReport:
-    """owner 為 None 時巡檢全站；指定時只巡檢該使用者的追蹤（使用各自的鎖，互不阻擋）。"""
+    """owner 為 None 時巡檢全站；指定時只巡檢該使用者的追蹤（使用各自的鎖，互不阻擋）。
+
+    due_only=True（Worker 每分鐘的排程）只處理 next_check_at 已到或尚未排定的追蹤。
+    """
     lock_name = f"{PATROL_LOCK}:{owner}" if owner else PATROL_LOCK
     token = await cache.acquire_lock(lock_name, lock_ttl_s)
     if token is None:
@@ -275,6 +283,13 @@ async def run_patrol(
             )
             if owner:
                 query = query.where(TrackedWatchlist.user_identifier == owner)
+            if due_only:
+                query = query.where(
+                    or_(
+                        TrackedWatchlist.next_check_at.is_(None),
+                        TrackedWatchlist.next_check_at <= now,
+                    )
+                )
             watches = list((await session.scalars(query)).all())
         stats["active"] = len(watches)
         groups = group_by_route(watches)
@@ -284,9 +299,28 @@ async def run_patrol(
         for item in groups.items():
             queue.put_nowait(item)
         await asyncio.gather(*(_consume(ctx, queue, now, stats) for _ in range(consumers)))
+        await reschedule(ctx, watches, now)
     finally:
         await cache.release_lock(lock_name, token)
 
     report = PatrolReport(**{k: v for k, v in stats.items() if k in PatrolReport.model_fields})
-    log.info("巡檢完成：%s", report.model_dump())
+    if report.active or report.expired:  # 每分鐘的排程多半沒有到期項目，不必每次記錄
+        log.info("巡檢完成：%s", report.model_dump())
     return report
+
+
+async def reschedule(ctx: PatrolContext, watches: list[TrackedWatchlist], now: datetime) -> None:
+    """依各自的頻率排定下一次巡檢；沒有自己金鑰的追蹤最短 30 分鐘。"""
+    if not watches:
+        return
+    async with ctx.sessions() as session:
+        for watch in watches:
+            next_at = ctx.schedule.next_check(
+                now, watch.patrol_interval_minutes, bool(watch.token_fingerprint)
+            )
+            await session.execute(
+                update(TrackedWatchlist)
+                .where(TrackedWatchlist.id == watch.id)
+                .values(next_check_at=next_at)
+            )
+        await session.commit()

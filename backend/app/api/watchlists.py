@@ -15,6 +15,7 @@ from app.schemas import (
     PricePoint,
     WatchlistCreate,
     WatchlistOut,
+    WatchlistUpdate,
 )
 from app.services import watchlist_service as svc
 from app.services.patrol import run_patrol
@@ -51,8 +52,22 @@ async def create_watchlist(
         container.settings.webhook_allowed_hosts,
         container.cipher,
         user_token,
+        container.schedule,
     )
     return ApiResponse(data=created)
+
+
+@router.patch("/watchlists/{watch_id}", response_model=ApiResponse[WatchlistOut])
+async def update_watchlist(
+    watch_id: uuid.UUID,
+    body: WatchlistUpdate,
+    session: SessionDep,
+    user: UserDep,
+    container: ContainerDep,
+) -> ApiResponse[WatchlistOut]:
+    """編輯名稱（直接覆寫）與巡檢頻率；只會更新有送出的欄位。"""
+    updated = await svc.update_watchlist(session, user, watch_id, body, container.schedule)
+    return ApiResponse(data=updated)
 
 
 @router.delete("/watchlists", response_model=ApiResponse[DeletedCount])

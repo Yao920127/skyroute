@@ -1,4 +1,4 @@
-"""自選看盤清單：建立、查詢（附統計）、軟刪除、歷史價格與告警紀錄。"""
+"""自選看盤清單：建立、編輯（名稱與巡檢頻率）、查詢（附統計）、軟刪除、歷史價格與告警紀錄。"""
 
 import uuid
 from collections import defaultdict
@@ -9,11 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.integrations.duffel_client import DuffelClient
 from app.models import AlertHistory, PriceHistory, TrackedWatchlist, WatchStatus
-from app.schemas import AlertOut, PricePoint, WatchlistCreate, WatchlistOut
+from app.schemas import AlertOut, PricePoint, WatchlistCreate, WatchlistOut, WatchlistUpdate
 from app.services.airport_service import ensure_airport
 from app.services.alerts import validate_webhook_url
 from app.services.board_stats import PriceSample, compute_stats
 from app.services.credentials import CipherUnavailable, TokenCipher
+from app.services.schedule import IntervalNotAllowed, PatrolSchedule, check_interval
 
 STATS_LOOKBACK_DAYS = 30
 
@@ -40,7 +41,13 @@ async def create_watchlist(
     allowed_webhook_hosts: list[str],
     cipher: TokenCipher,
     user_token: str | None = None,
+    schedule: PatrolSchedule | None = None,
+    now: datetime | None = None,
 ) -> WatchlistOut:
+    try:
+        check_interval(payload.patrol_interval_minutes, uses_own_key=bool(user_token))
+    except IntervalNotAllowed as exc:
+        raise ValidationFailed(str(exc)) from exc
     token_enc = None
     if user_token:
         try:
@@ -63,6 +70,13 @@ async def create_watchlist(
         webhook_url=webhook,
         duffel_token_enc=token_enc,
         token_fingerprint=client.namespace if user_token else None,
+        next_check_at=(
+            schedule.next_check(
+                now or datetime.now(UTC), payload.patrol_interval_minutes, bool(user_token)
+            )
+            if schedule
+            else None
+        ),
     )
     session.add(watch)
     await session.commit()
@@ -75,6 +89,35 @@ async def get_owned(session: AsyncSession, user_id: str, watch_id: uuid.UUID) ->
     if watch is None or watch.user_identifier != user_id:
         raise NotFoundError("找不到此追蹤項目")
     return watch
+
+
+async def update_watchlist(
+    session: AsyncSession,
+    user_id: str,
+    watch_id: uuid.UUID,
+    payload: WatchlistUpdate,
+    schedule: PatrolSchedule,
+    now: datetime | None = None,
+) -> WatchlistOut:
+    """名稱直接覆寫舊值；變更巡檢頻率時，從現在起重新排定下一次巡檢。"""
+    watch = await get_owned(session, user_id, watch_id)
+    fields = payload.model_fields_set
+    if "label" in fields:
+        watch.label = payload.label
+    if "patrol_interval_minutes" in fields:
+        if watch.status != WatchStatus.TRACKING:
+            raise ValidationFailed("已結束的追蹤無法變更巡檢頻率")
+        minutes = payload.patrol_interval_minutes
+        own_key = bool(watch.token_fingerprint)
+        try:
+            check_interval(minutes, uses_own_key=own_key)
+        except IntervalNotAllowed as exc:
+            raise ValidationFailed(str(exc)) from exc
+        watch.patrol_interval_minutes = minutes
+        watch.next_check_at = schedule.next_check(now or datetime.now(UTC), minutes, own_key)
+    await session.commit()
+    await session.refresh(watch)
+    return to_out(watch)
 
 
 async def cancel_watchlist(

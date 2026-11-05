@@ -317,3 +317,22 @@ class TestUserPatrol:
         response = await client.post("/api/watchlists/patrol")
         assert response.status_code == 401
         assert response.json()["meta"]["code"] == "login_required"
+
+
+class TestKeyRemovalRelaxesInterval:
+    @respx.mock
+    async def test_clearing_account_key_bumps_short_intervals(
+        self, client: httpx.AsyncClient
+    ) -> None:
+        mock_google()
+        respx.get(f"{DUFFEL}/air/airlines").mock(return_value=httpx.Response(200, json={}))
+        await login(client)
+        await client.put("/api/me/duffel-key", json={"token": ACCOUNT_KEY})
+        fast = (
+            await client.post("/api/watchlists", json={**WATCH, "patrol_interval_minutes": 5})
+        ).json()["data"]
+        assert fast["patrol_interval_minutes"] == 5
+
+        await client.delete("/api/me/duffel-key")
+        after = (await client.get("/api/watchlists")).json()["data"][0]
+        assert after["patrol_interval_minutes"] == 30

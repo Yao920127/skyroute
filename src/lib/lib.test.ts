@@ -24,6 +24,7 @@ import {
   parseSearchState,
   serializeSearchState,
 } from "./searchState.ts";
+import { intervalKey, isIntervalAllowed, nextCheckLabel, parseIntervalKey } from "./schedule.ts";
 import { sparklinePath } from "./sparkline.ts";
 import { stopAirports, stopsText } from "./stops.ts";
 import type { MatrixCell } from "./types.ts";
@@ -284,5 +285,27 @@ describe("stops text", () => {
       ["HKG"],
     );
     expect(stopsText(withBoth, zhT).text).toBe("1 次轉機 · HKG · 經停 BKK");
+  });
+});
+
+describe("patrol schedule", () => {
+  it("round-trips select values", () => {
+    expect(intervalKey(null)).toBe("daily");
+    expect(parseIntervalKey("daily")).toBeNull();
+    expect(parseIntervalKey(intervalKey(30))).toBe(30);
+    expect(parseIntervalKey("7")).toBeNull();
+  });
+
+  it("allows short intervals only with an own key", () => {
+    expect(isIntervalAllowed(5, false)).toBe(false);
+    expect(isIntervalAllowed(15, true)).toBe(true);
+    expect(isIntervalAllowed(30, false)).toBe(true);
+    expect(isIntervalAllowed(null, false)).toBe(true);
+  });
+
+  it("shows only the time for checks later today", () => {
+    const now = new Date(2026, 10, 6, 9, 0);
+    expect(nextCheckLabel(new Date(2026, 10, 6, 14, 30).toISOString(), now)).toBe("14:30");
+    expect(nextCheckLabel(new Date(2026, 10, 7, 3, 0).toISOString(), now)).toBe("11/7 03:00");
   });
 });

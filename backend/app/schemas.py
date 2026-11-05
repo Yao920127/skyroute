@@ -5,12 +5,20 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated, Any, Literal, Self
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from app.domain.metrics import DEFAULT_TIME_VALUE_PER_HOUR, SortKey
 from app.domain.offers import CabinClass, RankedOffer
 from app.domain.topology import DEFAULT_MAX_LAYOVER, DEFAULT_MIN_LAYOVER, TopologyFilter
 from app.services.fx import CurrencyCode
+from app.services.schedule import PatrolInterval
 from app.services.search_service import Leg, RouteQuery
 
 
@@ -237,6 +245,8 @@ class WatchlistCreate(TripParams):
     webhook_url: str | None = Field(default=None, max_length=500)
     # 目標價使用的幣別；巡檢時把報價換算成此幣別再比對與記錄
     currency: CurrencyCode = "TWD"
+    # 巡檢頻率（分鐘）；None＝每日固定時間。30 分鐘以內需使用自己的金鑰
+    patrol_interval_minutes: PatrolInterval | None = None
 
     @model_validator(mode="after")
     def _check_threshold(self) -> Self:
@@ -247,6 +257,18 @@ class WatchlistCreate(TripParams):
         if self.min_layover_minutes > self.max_layover_minutes:
             raise ValueError("最短轉機時間不可大於最長轉機時間")
         return self
+
+
+class WatchlistUpdate(BaseModel):
+    """只會更新有送出的欄位；名稱直接覆寫（不保留舊名稱），空字串視為清除。"""
+
+    label: str | None = Field(default=None, max_length=100)
+    patrol_interval_minutes: PatrolInterval | None = None
+
+    @field_validator("label")
+    @classmethod
+    def _strip_label(cls, value: str | None) -> str | None:
+        return (value or "").strip() or None
 
 
 class PricePoint(BaseModel):
@@ -293,6 +315,8 @@ class WatchlistOut(BaseModel):
     min_layover_minutes: int
     max_layover_minutes: int
     currency: str | None = None
+    patrol_interval_minutes: int | None = None
+    next_check_at: datetime | None = None
     has_webhook: bool = False
     uses_own_key: bool = False
     is_active: bool

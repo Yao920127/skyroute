@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
+import { useAccount } from "../../hooks/useAccount.ts";
 import { useApiKey } from "../../hooks/useApiKey.ts";
 import { useI18n } from "../../i18n/i18n.ts";
 import { api } from "../../lib/api.ts";
@@ -9,6 +10,8 @@ import { cabinLabel, dateWithWeekday } from "../../lib/format.ts";
 import type { SearchState, WatchlistCreate } from "../../lib/types.ts";
 import { ApiErrorNotice } from "../settings/ApiErrorNotice.tsx";
 import { Select } from "../ui/Select.tsx";
+import { PortalContainerContext } from "../ui/portal.ts";
+import { IntervalSelect } from "./IntervalSelect.tsx";
 
 export type WatchDraft = {
   trip: SearchState;
@@ -35,6 +38,7 @@ function initialForm(draft: WatchDraft) {
     airline: draft.airline ?? "",
     webhook: "",
     maxStops: trip.direct_only ? 0 : trip.max_stops,
+    interval: null as number | null,
   };
 }
 
@@ -44,6 +48,10 @@ export function WatchForm({ draft, onClose, onCreated }: Props) {
   const [form, setForm] = useState(() => initialForm(draft));
   const queryClient = useQueryClient();
   const apiKey = useApiKey();
+  const { account } = useAccount();
+  // 已登入看帳號金鑰；未登入看這台瀏覽器的金鑰
+  const hasOwnKey = account ? Boolean(account.key_mask) : Boolean(apiKey);
+  const [dialogEl, setDialogEl] = useState<HTMLDialogElement | null>(null);
   const displayCurrency = useCurrency();
   // 目標價以建立當下的價格幣別為準（搜尋結果已換算成顯示幣別）
   const currency = draft.currency ?? displayCurrency;
@@ -51,6 +59,7 @@ export function WatchForm({ draft, onClose, onCreated }: Props) {
 
   useEffect(() => {
     dialogRef.current?.showModal();
+    setDialogEl(dialogRef.current);
   }, []);
 
   const create = useMutation({
@@ -86,6 +95,7 @@ export function WatchForm({ draft, onClose, onCreated }: Props) {
       max_layover_minutes: trip.max_layover_minutes,
       webhook_url: form.webhook.trim() || null,
       currency,
+      patrol_interval_minutes: form.interval,
     });
   };
 
@@ -100,121 +110,133 @@ export function WatchForm({ draft, onClose, onCreated }: Props) {
 
   return (
     <dialog ref={dialogRef} className="sheet" onClose={onClose} aria-labelledby="watch-form-title">
-      <form className="sheet__body" onSubmit={handleSubmit}>
-        <header className="sheet__head">
-          <p className="sheet__kicker mono">{t("watch.kicker")}</p>
-          <h2 id="watch-form-title">
-            <span className="mono">{trip.origin}</span> →{" "}
-            <span className="mono">{trip.destination}</span>
-          </h2>
-          <p className="sheet__trip">
-            {t("watch.trip", { dates, pax, cabin: cabinLabel(trip.cabin_class, t) })}
-            {draft.price
-              ? t("watch.current", { price: formatPrice(draft.price, currency, locale) })
-              : ""}
-          </p>
-          {(trip.allowed_hubs.length > 0 || trip.excluded_hubs.length > 0) && (
-            <p className="sheet__hubs">
-              {trip.allowed_hubs.length > 0 && t("watch.via", { v: trip.allowed_hubs.join(", ") })}
-              {trip.excluded_hubs.length > 0 &&
-                t("watch.avoid", { v: trip.excluded_hubs.join(", ") })}
+      <PortalContainerContext value={dialogEl}>
+        <form className="sheet__body" onSubmit={handleSubmit}>
+          <header className="sheet__head">
+            <p className="sheet__kicker mono">{t("watch.kicker")}</p>
+            <h2 id="watch-form-title">
+              <span className="mono">{trip.origin}</span> →{" "}
+              <span className="mono">{trip.destination}</span>
+            </h2>
+            <p className="sheet__trip">
+              {t("watch.trip", { dates, pax, cabin: cabinLabel(trip.cabin_class, t) })}
+              {draft.price
+                ? t("watch.current", { price: formatPrice(draft.price, currency, locale) })
+                : ""}
             </p>
-          )}
-        </header>
+            {(trip.allowed_hubs.length > 0 || trip.excluded_hubs.length > 0) && (
+              <p className="sheet__hubs">
+                {trip.allowed_hubs.length > 0 &&
+                  t("watch.via", { v: trip.allowed_hubs.join(", ") })}
+                {trip.excluded_hubs.length > 0 &&
+                  t("watch.avoid", { v: trip.excluded_hubs.join(", ") })}
+              </p>
+            )}
+          </header>
 
-        <div className="sheet__grid">
-          <label className="field">
-            <span>{t("watch.label")}</span>
-            <input
-              className="input"
-              maxLength={100}
-              value={form.label}
-              placeholder={t("watch.labelPh")}
-              onChange={(e) => set("label", e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>{t("watch.airline")}</span>
-            <input
-              className="input mono"
-              maxLength={2}
-              value={form.airline}
-              placeholder="BR"
-              onChange={(e) => set("airline", e.target.value.toUpperCase())}
-            />
-          </label>
-          <label className="field">
-            <span>{t("watch.target", { currency })}</span>
-            <input
-              className="input mono"
-              type="number"
-              inputMode="decimal"
-              min={1}
-              step="0.01"
-              value={form.targetPrice}
-              onChange={(e) => set("targetPrice", e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>{t("watch.drop")}</span>
-            <input
-              className="input mono"
-              type="number"
-              inputMode="decimal"
-              min={0.5}
-              max={90}
-              step="0.5"
-              value={form.dropPercent}
-              onChange={(e) => set("dropPercent", e.target.value)}
-            />
-          </label>
-          <div className="field">
-            <span>{t("watch.maxStops")}</span>
-            <Select
-              value={String(form.maxStops)}
-              onValueChange={(v) => set("maxStops", Number(v))}
-              ariaLabel={t("watch.maxStops")}
-              options={[
-                { value: "0", label: t("watch.direct") },
-                { value: "1", label: t("watch.stopsN", { n: 1 }) },
-                { value: "2", label: t("watch.stopsN", { n: 2 }) },
-              ]}
-            />
+          <div className="sheet__grid">
+            <label className="field">
+              <span>{t("watch.label")}</span>
+              <input
+                className="input"
+                maxLength={100}
+                value={form.label}
+                placeholder={t("watch.labelPh")}
+                onChange={(e) => set("label", e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span>{t("watch.airline")}</span>
+              <input
+                className="input mono"
+                maxLength={2}
+                value={form.airline}
+                placeholder="BR"
+                onChange={(e) => set("airline", e.target.value.toUpperCase())}
+              />
+            </label>
+            <label className="field">
+              <span>{t("watch.target", { currency })}</span>
+              <input
+                className="input mono"
+                type="number"
+                inputMode="decimal"
+                min={1}
+                step="0.01"
+                value={form.targetPrice}
+                onChange={(e) => set("targetPrice", e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span>{t("watch.drop")}</span>
+              <input
+                className="input mono"
+                type="number"
+                inputMode="decimal"
+                min={0.5}
+                max={90}
+                step="0.5"
+                value={form.dropPercent}
+                onChange={(e) => set("dropPercent", e.target.value)}
+              />
+            </label>
+            <div className="field">
+              <span>{t("watch.maxStops")}</span>
+              <Select
+                value={String(form.maxStops)}
+                onValueChange={(v) => set("maxStops", Number(v))}
+                ariaLabel={t("watch.maxStops")}
+                options={[
+                  { value: "0", label: t("watch.direct") },
+                  { value: "1", label: t("watch.stopsN", { n: 1 }) },
+                  { value: "2", label: t("watch.stopsN", { n: 2 }) },
+                ]}
+              />
+            </div>
+            <div className="field">
+              <span>{t("watch.interval")}</span>
+              <IntervalSelect
+                value={form.interval}
+                hasOwnKey={hasOwnKey}
+                onChange={(v) => set("interval", v)}
+              />
+            </div>
+            <label className="field sheet__wide">
+              <span>{t("watch.webhook")}</span>
+              <input
+                className="input mono"
+                type="url"
+                inputMode="url"
+                placeholder="https://discord.com/api/webhooks/…"
+                value={form.webhook}
+                onChange={(e) => set("webhook", e.target.value)}
+              />
+            </label>
           </div>
-          <label className="field sheet__wide">
-            <span>{t("watch.webhook")}</span>
-            <input
-              className="input mono"
-              type="url"
-              inputMode="url"
-              placeholder="https://discord.com/api/webhooks/…"
-              value={form.webhook}
-              onChange={(e) => set("webhook", e.target.value)}
-            />
-          </label>
-        </div>
 
-        <p className="sheet__note">{t("watch.note")}</p>
-        {apiKey && <p className="sheet__note">{t("watch.ownKeyNote")}</p>}
-        {create.isError && <ApiErrorNotice error={create.error} />}
+          <p className="sheet__note">{t("watch.intervalHint")}</p>
+          <p className="sheet__note">{t("watch.note")}</p>
+          {apiKey && <p className="sheet__note">{t("watch.ownKeyNote")}</p>}
+          {create.isError && <ApiErrorNotice error={create.error} />}
 
-        <footer className="sheet__foot">
-          <button
-            type="button"
-            className="btn btn--ghost"
-            onClick={() => dialogRef.current?.close()}
-          >
-            {t("common.cancel")}
-          </button>
-          <button
-            type="submit"
-            className="btn btn--primary"
-            disabled={!hasThreshold || create.isPending}
-          >
-            {create.isPending ? t("watch.submitting") : t("watch.submit")}
-          </button>
-        </footer>
-      </form>
+          <footer className="sheet__foot">
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => dialogRef.current?.close()}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="submit"
+              className="btn btn--primary"
+              disabled={!hasThreshold || create.isPending}
+            >
+              {create.isPending ? t("watch.submitting") : t("watch.submit")}
+            </button>
+          </footer>
+        </form>
+      </PortalContainerContext>
     </dialog>
   );
 }

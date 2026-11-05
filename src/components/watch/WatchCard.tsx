@@ -1,6 +1,7 @@
 import { useI18n } from "../../i18n/i18n.ts";
 import { formatPrice } from "../../lib/currency.ts";
 import { formatPct, relativeTime, trendOf } from "../../lib/format.ts";
+import { nextCheckLabel } from "../../lib/schedule.ts";
 import type { Watchlist } from "../../lib/types.ts";
 import { Sparkline } from "./Sparkline.tsx";
 
@@ -70,7 +71,14 @@ export function WatchCard({ watch, isSelected, onSelect }: Props) {
           </span>
           {hitTarget && <span className="status status--hit">{t("status.hit")}</span>}
           {watch.uses_own_key && <span className="status status--own">{t("status.ownKey")}</span>}
-          <span className="ticker__time">{relativeTime(stats.last_checked_at, t)}</span>
+          <span className="ticker__time">
+            {relativeTime(stats.last_checked_at, t)}
+            {watch.status === "TRACKING" && watch.next_check_at && (
+              <strong className="ticker__next">
+                {t("card.nextCheck", { time: nextCheckLabel(watch.next_check_at) })}
+              </strong>
+            )}
+          </span>
         </span>
       </button>
     </li>

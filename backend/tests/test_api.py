@@ -298,7 +298,8 @@ class TestPatrolPipeline:
                     user_identifier="tester-1",
                     origin="TPE",
                     destination="NRT",
-                    departure_date=date.today() - timedelta(days=1),
+                    # 巡檢以 UTC 日期判斷過期；用同一個時鐘，避免台北凌晨跑測試時失敗
+                    departure_date=datetime.now(UTC).date() - timedelta(days=1),
                     target_price=Decimal(1),
                 )
             )

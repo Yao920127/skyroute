@@ -35,6 +35,10 @@ _EXACT: dict[str, str] = {
     "缺少或無效的 X-User-Id 標頭": "Missing or invalid X-User-Id header",
     "請先以 Google 帳號登入": "Please sign in with Google first",
     "巡檢太頻繁，請稍後再試": "Checked too recently; please try again in a minute",
+    "30 分鐘以內的巡檢頻率需要使用自己的 Duffel 金鑰": (
+        "Checking more often than every 30 minutes requires your own Duffel key"
+    ),
+    "已結束的追蹤無法變更巡檢頻率": "Ended watches can't change their check frequency",
     "此伺服器未啟用 Google 登入": "Google sign-in is not enabled on this server",
     "無法驗證 Google 登入憑證": "Could not verify the Google sign-in credential",
     "Google 登入憑證無效或已過期": "The Google sign-in credential is invalid or expired",

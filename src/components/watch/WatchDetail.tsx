@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import { useI18n } from "../../i18n/i18n.ts";
 import { api } from "../../lib/api.ts";
 import { formatPrice } from "../../lib/currency.ts";
 import { cabinLabel, dateWithWeekday } from "../../lib/format.ts";
+import { intervalLabel } from "../../lib/schedule.ts";
 import type { Watchlist } from "../../lib/types.ts";
 import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
+import { EditWatchDialog } from "./EditWatchDialog.tsx";
 
 // Recharts 體積較大，只在打開詳情時才載入
 const PriceChart = lazy(() => import("./PriceChart.tsx"));
@@ -23,6 +25,7 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
   const { lang, locale, t } = useI18n();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
   const currency = watch.currency ?? watch.stats.currency;
   const history = useQuery({
     queryKey: ["history", watch.id, watch.stats.last_checked_at],
@@ -77,6 +80,8 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
       t("detail.rule.avoid", { v: watch.excluded_transits.join(", ") }),
     watch.preferred_airline && t("detail.rule.airline", { v: watch.preferred_airline }),
     watch.has_webhook ? t("detail.rule.webhook") : t("detail.rule.log"),
+    watch.status === "TRACKING" &&
+      t("detail.rule.interval", { v: intervalLabel(watch.patrol_interval_minutes, t) }),
   ].filter(Boolean) as string[];
 
   return (
@@ -111,6 +116,14 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
           </p>
         </div>
         <div className="detail__actions">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => setIsEditing(true)}
+            disabled={isBusy}
+          >
+            {t("detail.edit")}
+          </button>
           {watch.status === "TRACKING" && (
             <button
               type="button"
@@ -183,6 +196,7 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
           ))}
         </ol>
       </section>
+      {isEditing && <EditWatchDialog watch={watch} onClose={() => setIsEditing(false)} />}
     </article>
   );
 }

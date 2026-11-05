@@ -28,7 +28,10 @@ const AXIS_STYLE = {
 
 function tick(iso: string): string {
   const d = new Date(iso);
-  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}h`;
+  // 巡檢可以短到每 5 分鐘一次，只顯示到「時」會出現一排相同的標籤
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${d.getMonth() + 1}/${d.getDate()} ${hh}:${mm}`;
 }
 
 // Recharts 的 SVG 屬性無法讀 CSS 變數，這裡的色碼對應 tokens.css

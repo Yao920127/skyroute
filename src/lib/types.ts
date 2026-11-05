@@ -220,6 +220,9 @@ export interface Watchlist extends TripParams {
   min_layover_minutes: number;
   max_layover_minutes: number;
   currency: string | null;
+  /** 巡檢頻率（分鐘）；null＝每日固定時間 */
+  patrol_interval_minutes: number | null;
+  next_check_at: string | null;
   has_webhook: boolean;
   uses_own_key: boolean;
   is_active: boolean;
@@ -240,6 +243,13 @@ export interface WatchlistCreate extends TripParams {
   max_layover_minutes: number;
   webhook_url: string | null;
   currency: string;
+  patrol_interval_minutes: number | null;
+}
+
+/** 只送出要修改的欄位；label 送空字串代表清除名稱 */
+export interface WatchlistUpdate {
+  label?: string;
+  patrol_interval_minutes?: number | null;
 }
 
 export interface PricePoint {

@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import TrackedWatchlist, User, WatchStatus
 from app.services.credentials import TokenCipher, token_fingerprint
+from app.services.schedule import MIN_SHARED_INTERVAL
 
 GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"
 GOOGLE_ISSUERS = ("accounts.google.com", "https://accounts.google.com")
@@ -180,14 +181,22 @@ async def set_account_key(
     fingerprint = token_fingerprint(token) if token else None
     user.duffel_token_enc = encrypted
     user.token_fingerprint = fingerprint
+    owned = (
+        TrackedWatchlist.user_identifier == user_identifier(user),
+        TrackedWatchlist.status == WatchStatus.TRACKING,
+    )
     await session.execute(
         update(TrackedWatchlist)
-        .where(
-            TrackedWatchlist.user_identifier == user_identifier(user),
-            TrackedWatchlist.status == WatchStatus.TRACKING,
-        )
+        .where(*owned)
         .values(duffel_token_enc=encrypted, token_fingerprint=fingerprint)
     )
+    if token is None:
+        # 改用網站共用金鑰後，30 分鐘以內的頻率放寬為 30 分鐘
+        await session.execute(
+            update(TrackedWatchlist)
+            .where(*owned, TrackedWatchlist.patrol_interval_minutes < MIN_SHARED_INTERVAL)
+            .values(patrol_interval_minutes=MIN_SHARED_INTERVAL)
+        )
     await session.commit()
 
 

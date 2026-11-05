@@ -61,7 +61,10 @@ class User(Base):
 
 class TrackedWatchlist(Base):
     __tablename__ = "tracked_watchlists"
-    __table_args__ = (Index("ix_watchlists_patrol", "is_active", "departure_date"),)
+    __table_args__ = (
+        Index("ix_watchlists_patrol", "is_active", "departure_date"),
+        Index("ix_watchlists_next_check", "next_check_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_identifier: Mapped[str] = mapped_column(String(100), index=True)
@@ -87,6 +90,9 @@ class TrackedWatchlist(Base):
     currency: Mapped[str | None] = mapped_column(String(3))
     duffel_token_enc: Mapped[str | None] = mapped_column(Text)
     token_fingerprint: Mapped[str | None] = mapped_column(String(16))
+    # 巡檢頻率（分鐘）；NULL＝每日固定時間。next_check_at 為下一次應巡檢的時間
+    patrol_interval_minutes: Mapped[int | None] = mapped_column(Integer)
+    next_check_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_active: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default="true", index=True
     )

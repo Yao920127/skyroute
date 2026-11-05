@@ -233,8 +233,35 @@
 }
 
 .ticker__time {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
   margin-left: auto;
   color: var(--muted);
+  text-align: right;
+}
+
+.ticker__next {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--deep-green);
+}
+
+.ticker--expired .ticker__next,
+.ticker--cancelled .ticker__next {
+  display: none;
+}
+
+.edit-watch {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.edit-watch__note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  line-height: 1.55;
 }
 
 .status {
