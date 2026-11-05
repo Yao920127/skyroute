@@ -25,6 +25,9 @@ declare global {
 }
 
 let loading: Promise<GoogleId> | null = null;
+// GIS 只能初始化一次：記住已初始化的用戶端 ID，回呼則透過可替換的參照轉送給最新的畫面
+let initializedClientId: string | null = null;
+let onCredentialRef: (credential: string) => void = () => undefined;
 
 export function loadGoogleIdentity(): Promise<GoogleId> {
   if (window.google?.accounts?.id) return Promise.resolve(window.google.accounts.id);
@@ -52,12 +55,16 @@ export async function renderGoogleButton(
   onCredential: (credential: string) => void,
 ): Promise<void> {
   const gis = await loadGoogleIdentity();
-  gis.initialize({
-    client_id: clientId,
-    callback: (response) => response.credential && onCredential(response.credential),
-    ux_mode: "popup",
-    use_fedcm_for_button: true,
-  });
+  onCredentialRef = onCredential;
+  if (initializedClientId !== clientId) {
+    gis.initialize({
+      client_id: clientId,
+      callback: (response) => response.credential && onCredentialRef(response.credential),
+      ux_mode: "popup",
+      use_fedcm_for_button: true,
+    });
+    initializedClientId = clientId;
+  }
   parent.replaceChildren();
   gis.renderButton(parent, {
     type: "standard",
