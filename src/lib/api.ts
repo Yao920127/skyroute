@@ -134,7 +134,8 @@ export const api = {
 
   alerts: (id: string) => request<AlertRecord[]>(`/api/watchlists/${id}/alerts`),
 
-  runPatrol: () => request<PatrolReport>("/api/patrol/run", { method: "POST" }),
+  /** 只巡檢自己的追蹤（不需管理密碼；伺服器有每人冷卻時間） */
+  runPatrol: () => request<PatrolReport>("/api/watchlists/patrol", { method: "POST" }),
 };
 
 /** 以串流方式取得彈性日期矩陣，每收到一行就回呼一次。 */

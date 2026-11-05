@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     patrol_run_on_start: bool = False
     patrol_consumers: int = Field(default=3, ge=1, le=10)
     patrol_lock_ttl_s: int = 30 * 60
+    # 使用者手動巡檢「自己的」追蹤：兩次之間至少間隔幾秒（保護 Duffel 配額）
+    user_patrol_cooldown_s: int = Field(default=60, ge=0)
     admin_token: SecretStr | None = None
     # 用來加密使用者金鑰（供背景巡檢）；更換後先前保存的金鑰將無法解密
     secret_key: SecretStr | None = None  # 設定後手動觸發巡檢需帶 X-Admin-Token

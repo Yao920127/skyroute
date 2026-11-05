@@ -254,8 +254,11 @@ async def run_patrol(
     lock_ttl_s: int,
     today: date | None = None,
     now: datetime | None = None,
+    owner: str | None = None,
 ) -> PatrolReport:
-    token = await cache.acquire_lock(PATROL_LOCK, lock_ttl_s)
+    """owner 為 None 時巡檢全站；指定時只巡檢該使用者的追蹤（使用各自的鎖，互不阻擋）。"""
+    lock_name = f"{PATROL_LOCK}:{owner}" if owner else PATROL_LOCK
+    token = await cache.acquire_lock(lock_name, lock_ttl_s)
     if token is None:
         log.info("另一個巡檢正在執行，略過本次")
         return PatrolReport(skipped_locked=True)
@@ -266,16 +269,13 @@ async def run_patrol(
     try:
         async with ctx.sessions() as session:
             stats["expired"] = await expire_departed(session, today)
-            watches = list(
-                (
-                    await session.scalars(
-                        select(TrackedWatchlist).where(
-                            TrackedWatchlist.is_active.is_(True),
-                            TrackedWatchlist.status == WatchStatus.TRACKING,
-                        )
-                    )
-                ).all()
+            query = select(TrackedWatchlist).where(
+                TrackedWatchlist.is_active.is_(True),
+                TrackedWatchlist.status == WatchStatus.TRACKING,
             )
+            if owner:
+                query = query.where(TrackedWatchlist.user_identifier == owner)
+            watches = list((await session.scalars(query)).all())
         stats["active"] = len(watches)
         groups = group_by_route(watches)
         stats["route_groups"] = len(groups)
@@ -285,7 +285,7 @@ async def run_patrol(
             queue.put_nowait(item)
         await asyncio.gather(*(_consume(ctx, queue, now, stats) for _ in range(consumers)))
     finally:
-        await cache.release_lock(PATROL_LOCK, token)
+        await cache.release_lock(lock_name, token)
 
     report = PatrolReport(**{k: v for k, v in stats.items() if k in PatrolReport.model_fields})
     log.info("巡檢完成：%s", report.model_dump())

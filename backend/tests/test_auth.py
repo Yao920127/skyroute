@@ -283,3 +283,37 @@ class TestAccountKey:
         response = await client.put("/api/me/duffel-key", json={"token": ACCOUNT_KEY})
         assert response.status_code == 401
         assert response.json()["meta"]["code"] == "login_required"
+
+
+class TestUserPatrol:
+    @respx.mock
+    async def test_patrols_only_own_watchlists_with_cooldown(
+        self, settings: Settings, container: Container
+    ) -> None:
+        mock_google()
+        search = mock_search(direct_raw("d1", "100"))
+        async with (
+            make_client(settings, container) as alice,
+            make_client(settings, container) as bob,
+        ):
+            await login(alice, "sub-alice")
+            await login(bob, "sub-bob")
+            await alice.post("/api/watchlists", json=WATCH)
+            await bob.post("/api/watchlists", json={**WATCH, "destination": "KIX"})
+            calls_before = len(search.calls)
+
+            report = (await alice.post("/api/watchlists/patrol")).json()["data"]
+            assert report["active"] == 1 and report["prices_recorded"] == 1
+            assert len(search.calls) == calls_before + 1
+            sent = json.loads(search.calls[-1].request.content)["data"]["slices"][0]
+            assert sent["destination"] == "NRT"  # 沒有查到 Bob 的 KIX
+
+            again = await alice.post("/api/watchlists/patrol")
+            assert again.status_code == 429
+            # 冷卻是每位使用者各自計算
+            assert (await bob.post("/api/watchlists/patrol")).status_code == 200
+
+    async def test_requires_login(self, client: httpx.AsyncClient) -> None:
+        response = await client.post("/api/watchlists/patrol")
+        assert response.status_code == 401
+        assert response.json()["meta"]["code"] == "login_required"
