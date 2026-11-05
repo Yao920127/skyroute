@@ -1,0 +1,53 @@
+[project]
+name = "skyroute-backend"
+version = "0.1.0"
+description = "SkyRoute 智慧機票探索與低價看盤監控系統 — API 與背景巡檢 Worker"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.32",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "asyncpg>=0.30",
+  "httpx>=0.28",
+  "redis>=5.2",
+  "cryptography>=50.0.2",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "pytest-cov>=6.0",
+  "respx>=0.22",
+  "ruff>=0.8",
+  "mypy>=1.13",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+markers = [
+  "unit: 純邏輯單元測試",
+  "integration: 需要 PostgreSQL 的整合測試",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/worker.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true

@@ -1,0 +1,192 @@
+import { useEffect, useRef, useState } from "react";
+
+import "./layout.css";
+import type { View } from "../../hooks/useUrlState.ts";
+import { setLang, useI18n, type Lang } from "../../i18n/i18n.ts";
+import type { MessageKey } from "../../i18n/messages.ts";
+import { CURRENCIES, setCurrency, useCurrency, type Currency } from "../../lib/currency.ts";
+import { Select } from "../ui/Select.tsx";
+
+const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: c }));
+
+type Props = {
+  view: View;
+  trackingCount: number;
+  keyLabel: string;
+  keyTone: "own" | "missing" | "server";
+  onNavigate: (view: View) => void;
+  onOpenKey: () => void;
+};
+
+export const NAV_ITEMS: { id: Exclude<View, "home">; labelKey: MessageKey }[] = [
+  { id: "explore", labelKey: "nav.explore" },
+  { id: "matrix", labelKey: "nav.matrix" },
+  { id: "board", labelKey: "nav.board" },
+];
+
+const LANGS: { id: Lang; label: string }[] = [
+  { id: "zh", label: "中" },
+  { id: "en", label: "EN" },
+];
+
+/** 語言切換與幣別選單（導覽列與手機選單共用） */
+function Preferences({ variant }: { variant: "bar" | "menu" }) {
+  const { lang, t } = useI18n();
+  const currency = useCurrency();
+  return (
+    <div className={`prefs prefs--${variant}`}>
+      <div className="prefs__lang" role="radiogroup" aria-label={t("common.lang")}>
+        {LANGS.map((l) => (
+          <button
+            key={l.id}
+            type="button"
+            role="radio"
+            aria-checked={lang === l.id}
+            onClick={() => setLang(l.id)}
+          >
+            {l.label}
+          </button>
+        ))}
+      </div>
+      <Select
+        size="sm"
+        className="prefs__currency"
+        value={currency}
+        onValueChange={(c) => setCurrency(c as Currency)}
+        ariaLabel={t("common.currency")}
+        options={CURRENCY_OPTIONS}
+      />
+    </div>
+  );
+}
+
+/**
+ * 頂部導覽列（所有裝置都在頂端）：
+ * - 電腦／平板：品牌｜分頁｜語言・幣別・金鑰
+ * - 手機：品牌｜金鑰｜選單按鈕，分頁與偏好設定收進下拉選單
+ */
+export function Navbar({ view, trackingCount, keyLabel, keyTone, onNavigate, onOpenKey }: Props) {
+  const { t } = useI18n();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsMenuOpen(false);
+    const onPointer = (e: PointerEvent) => {
+      const target = e.target as Element;
+      // 幣別 Select 的選單掛在 <body>，點它不算點到選單外面
+      if (target.closest?.("[data-radix-popper-content-wrapper]")) return;
+      if (!menuRef.current?.contains(target)) setIsMenuOpen(false);
+    };
+    addEventListener("keydown", onKey);
+    addEventListener("pointerdown", onPointer);
+    return () => {
+      removeEventListener("keydown", onKey);
+      removeEventListener("pointerdown", onPointer);
+    };
+  }, [isMenuOpen]);
+
+  const go = (target: View) => {
+    setIsMenuOpen(false);
+    onNavigate(target);
+  };
+
+  const count = (id: View) =>
+    id === "board" && trackingCount > 0 ? (
+      <span className="navbar__count mono">{trackingCount}</span>
+    ) : null;
+
+  return (
+    <header className="navbar">
+      <div className="navbar__inner" ref={menuRef}>
+        <a
+          href="/"
+          className="brand"
+          aria-current={view === "home" ? "page" : undefined}
+          onClick={(e) => {
+            e.preventDefault();
+            go("home");
+          }}
+        >
+          <span className="brand__mark" aria-hidden="true">
+            ↗
+          </span>
+          <span className="brand__name">SkyRoute</span>
+        </a>
+
+        <nav className="navbar__tabs" aria-label={t("nav.home")}>
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="navbar__tab"
+              aria-current={view === item.id ? "page" : undefined}
+              onClick={() => go(item.id)}
+            >
+              {t(item.labelKey)}
+              {count(item.id)}
+            </button>
+          ))}
+        </nav>
+
+        <div className="navbar__end">
+          <Preferences variant="bar" />
+          <button
+            type="button"
+            className={`keychip is-${keyTone}`}
+            onClick={onOpenKey}
+            aria-label={t("nav.keyAria", { label: keyLabel })}
+          >
+            <i aria-hidden="true" />
+            <span className="mono">{keyLabel}</span>
+          </button>
+          <button
+            type="button"
+            className="navbar__menu-btn"
+            aria-expanded={isMenuOpen}
+            aria-controls="navbar-menu"
+            aria-label={isMenuOpen ? t("nav.menuClose") : t("nav.menuOpen")}
+            onClick={() => setIsMenuOpen((v) => !v)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {isMenuOpen ? (
+                <path d="M6 6l12 12M18 6L6 18" />
+              ) : (
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              )}
+            </svg>
+            {!isMenuOpen && trackingCount > 0 && (
+              <span className="navbar__dot" aria-hidden="true" />
+            )}
+          </button>
+        </div>
+
+        {isMenuOpen && (
+          <div id="navbar-menu" className="navbar__menu">
+            <nav aria-label={t("nav.home")}>
+              {[{ id: "home" as const, labelKey: "nav.home" as const }, ...NAV_ITEMS].map(
+                (item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="navbar__menu-item"
+                    aria-current={view === item.id ? "page" : undefined}
+                    onClick={() => go(item.id)}
+                  >
+                    <span>{t(item.labelKey)}</span>
+                    {count(item.id)}
+                  </button>
+                ),
+              )}
+            </nav>
+            <div className="navbar__menu-prefs">
+              <span className="label">{t("nav.settings")}</span>
+              <Preferences variant="menu" />
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}

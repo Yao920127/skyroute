@@ -1,0 +1,472 @@
+/* ---------- Popover（電腦浮動面板／手機底部抽屜） ---------- */
+
+.popover {
+  position: relative;
+  min-width: 0;
+}
+
+.popover__scrim {
+  display: none;
+}
+
+.popover__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 60;
+  min-width: 280px;
+  padding: var(--space-lg);
+  background: var(--canvas);
+  color: var(--ink);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.35);
+  animation: fade-up var(--duration-fast) var(--ease-out-expo);
+}
+
+.popover__panel--start {
+  left: 0;
+}
+
+.popover__panel--end {
+  right: 0;
+}
+
+@media (max-width: 640px) {
+  .popover__scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    background: rgb(0 60 51 / 0.45);
+  }
+
+  .popover__panel {
+    position: fixed;
+    inset: auto 0 0;
+    min-width: 0;
+    max-height: 88dvh;
+    overflow-y: auto;
+    padding: var(--space-xl) var(--space-lg) calc(var(--space-lg) + var(--safe-bottom));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    animation: slide-up var(--duration-normal) var(--ease-out-expo);
+  }
+}
+
+/* ---------- 日期欄位與乘客欄位（觸發按鈕） ---------- */
+
+.datefield,
+.paxfield {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  padding: 0;
+  border: 1px solid var(--dark-rule);
+  border-radius: var(--radius-sm);
+  background: var(--dark-surface);
+  color: var(--on-dark);
+  text-align: left;
+  transition: border-color var(--duration-fast);
+}
+
+.datefield:hover,
+.paxfield:hover,
+.datefield[aria-expanded="true"],
+.paxfield[aria-expanded="true"] {
+  border-color: var(--on-dark);
+}
+
+.datefield__part,
+.paxfield {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 8px 14px;
+}
+
+.datefield__part {
+  flex: 1;
+  min-width: 0;
+}
+
+.datefield__part + .datefield__part {
+  border-left: 1px solid var(--dark-rule);
+}
+
+.datefield__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-dark-muted);
+}
+
+.datefield__value {
+  font-size: var(--text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 淺色版（多航段列表、看盤表單等白底處） */
+.datepicker--light .datefield {
+  border-color: var(--hairline);
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.datepicker--light .datefield__label {
+  color: var(--slate);
+}
+
+.datepicker--light .datefield__part + .datefield__part {
+  border-left-color: var(--hairline);
+}
+
+/* ---------- 日曆 ---------- */
+
+.datepicker__body {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.datepicker__hint {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.datepicker__foot {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.calendar {
+  position: relative;
+}
+
+.calendar__nav {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.calendar__arrow {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.calendar__arrow:hover:not(:disabled) {
+  background: var(--soft-stone);
+}
+
+.calendar__arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.calendar__months {
+  display: flex;
+  gap: var(--space-xl);
+}
+
+.calendar__month {
+  flex: 1;
+  min-width: 0;
+}
+
+.calendar__title {
+  margin: 0 0 var(--space-md);
+  height: 36px;
+  line-height: 36px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(36px, 1fr));
+  row-gap: 2px;
+}
+
+.calendar__weekday {
+  padding-bottom: var(--space-xs);
+  text-align: center;
+  font-size: var(--text-micro);
+  color: var(--muted);
+}
+
+.calendar__day {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 36px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  transition: background var(--duration-fast);
+}
+
+.calendar__day:hover:not(:disabled) {
+  background: var(--soft-stone);
+}
+
+.calendar__day:disabled {
+  color: var(--hairline);
+  cursor: not-allowed;
+}
+
+.calendar__day.is-today::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--coral);
+}
+
+.calendar__day.is-range {
+  border-radius: 0;
+  background: var(--pale-green);
+}
+
+.calendar__day.is-start {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.calendar__day.is-end {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.calendar__day.is-selected {
+  background: var(--primary);
+  color: var(--on-dark);
+}
+
+.calendar__day.is-preview {
+  background: var(--pale-green);
+  outline: 1px dashed var(--deep-green);
+  outline-offset: -1px;
+}
+
+.calendar__day:focus-visible {
+  outline: 2px solid var(--focus-blue);
+  outline-offset: 1px;
+  z-index: 1;
+}
+
+/* ---------- 乘客與艙等 ---------- */
+
+.paxpicker__body {
+  display: grid;
+  gap: var(--space-lg);
+  min-width: 300px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.stepper__label {
+  margin: 0;
+  font-weight: 500;
+}
+
+.stepper__hint {
+  margin: 0;
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.stepper__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.stepper__btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.stepper__btn:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.stepper__btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.stepper__value {
+  min-width: 1.5em;
+  text-align: center;
+  font-size: var(--text-body-lg);
+}
+
+.paxpicker__cabins {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xs);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
+}
+
+.paxpicker__cabin {
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  font-size: var(--text-caption);
+}
+
+.paxpicker__cabin[aria-checked="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-dark);
+}
+
+/* ---------- 範圍滑桿 ---------- */
+
+.range {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.range__head {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.range__label {
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.range__value {
+  font-size: var(--text-micro);
+  color: var(--ink);
+}
+
+.range__track {
+  position: relative;
+  height: 28px;
+}
+
+.range__track::before {
+  content: "";
+  position: absolute;
+  inset: 12px 0;
+  border-radius: var(--radius-full);
+  background: var(--border-light);
+}
+
+.range__fill {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+}
+
+.range__track input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.range__track input::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: var(--canvas);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  cursor: grab;
+  transition: transform var(--duration-fast);
+}
+
+.range__track input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: var(--canvas);
+  cursor: grab;
+}
+
+.range__track input:active::-webkit-slider-thumb {
+  cursor: grabbing;
+  transform: scale(1.12);
+}
+
+.range__track input:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--focus-blue);
+  outline-offset: 2px;
+}
+
+.range__track input::-webkit-slider-runnable-track {
+  background: none;
+}
+
+.range__track input::-moz-range-track {
+  background: none;
+}
+
+.range__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+@media (pointer: coarse) {
+  .range__track {
+    height: 36px;
+  }
+
+  .range__track::before,
+  .range__fill {
+    top: 16px;
+    bottom: 16px;
+  }
+
+  .range__track input::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+  }
+}

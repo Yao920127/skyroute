@@ -1,0 +1,215 @@
+/*
+ * 跨裝置互動層
+ * - 電腦（> 1024px）：頂部導覽、側欄篩選、置中對話框
+ * - 平板／手機（≤ 1024px）：抽屜式篩選與詳情（導覽一律在頂部，手機收進選單）
+ * - 手機（≤ 640px）：對話框改為底部抽屜、緊湊航班卡
+ * - 觸控裝置：可點區域至少 44px
+ */
+
+:root {
+  --navbar-h: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.only-compact {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  .only-compact {
+    display: revert !important;
+  }
+
+  .only-wide {
+    display: none !important;
+  }
+}
+
+/* ---------- 抽屜／對話框 ---------- */
+
+.panel {
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(86dvh, 860px);
+  padding: 0;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel[open] {
+  display: flex;
+}
+
+.panel--full {
+  width: min(760px, calc(100vw - 32px));
+}
+
+.panel__grip {
+  display: none;
+}
+
+.panel__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.panel__title {
+  font-size: var(--text-feature);
+  letter-spacing: -0.01em;
+}
+
+.panel__close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--soft-stone);
+}
+
+.panel__close svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--primary);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.panel__scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-xl);
+}
+
+.panel__foot {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-xl) calc(var(--space-md) + var(--safe-bottom));
+  border-top: 1px solid var(--border-light);
+  background: var(--canvas);
+}
+
+.panel__foot .btn {
+  flex: 1;
+}
+
+/* 手機：所有對話框（含既有的 .sheet）都變成底部抽屜 */
+@media (max-width: 640px) {
+  /* 以 dialog.sheet 提高優先權，蓋過各元件 CSS 內的置中寬度 */
+  dialog.sheet {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  dialog.sheet[open] {
+    animation: slide-up var(--duration-normal) var(--ease-out-expo);
+  }
+
+  /* 既有表單型對話框：內容可捲動、按鈕固定在底部 */
+  .sheet > form.sheet__body {
+    max-height: 92dvh;
+    overflow-y: auto;
+    padding: var(--space-xl) var(--space-lg) 0;
+  }
+
+  .sheet > form .sheet__foot {
+    position: sticky;
+    bottom: 0;
+    margin: 0 calc(var(--space-lg) * -1);
+    padding: var(--space-md) var(--space-lg) calc(var(--space-md) + var(--safe-bottom));
+    background: var(--canvas);
+    border-top: 1px solid var(--border-light);
+  }
+
+  .sheet > form .sheet__foot .btn {
+    flex: 1;
+  }
+
+  dialog.panel--full {
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .panel__grip {
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: var(--radius-full);
+    background: var(--hairline);
+  }
+
+  .panel--full .panel__grip {
+    display: none;
+  }
+
+  .panel__bar {
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .panel__scroll {
+    padding: var(--space-lg);
+  }
+
+  .panel__foot {
+    padding-left: var(--space-lg);
+    padding-right: var(--space-lg);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+/* ---------- 觸控裝置（或平板／手機寬度）：可點區域至少 44px ---------- */
+
+@media (pointer: coarse), (max-width: 1024px) {
+  .filter-btn,
+  .btn,
+  .tabs__item,
+  .sortbar__item,
+  .route-pill,
+  .navbar .keychip,
+  .trip__mode button {
+    min-height: 44px;
+  }
+
+  .chip {
+    min-height: 40px;
+    padding: 6px 14px;
+  }
+
+  .segmented button {
+    min-height: 40px;
+  }
+
+  .btn--ghost {
+    min-height: 44px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .switch {
+    min-height: 44px;
+  }
+
+  .switch input {
+    width: 20px;
+    height: 20px;
+  }
+}

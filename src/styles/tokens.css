@@ -1,0 +1,88 @@
+/* 設計 token：依 DESIGN.md（白底編輯風 × 深綠產品區塊 × 平面化介面） */
+:root {
+  /* 品牌與強調 */
+  --primary: #17171c;
+  --black: #000000;
+  --ink: #212121;
+  --deep-green: #003c33;
+  --dark-navy: #071829;
+  --action-blue: #1863dc;
+  --coral: #ff7759;
+  --coral-soft: #ffad9b;
+
+  /* 表面 */
+  --canvas: #ffffff;
+  --soft-stone: #eeece7;
+  --pale-green: #edfce9;
+  --pale-blue: #f1f5ff;
+  --card-border: #f2f2f2;
+
+  /* 文字與線 */
+  --muted: #93939f;
+  --slate: #75758a;
+  --body-muted: #616161;
+  --hairline: #d9d9dd;
+  --border-light: #e5e7eb;
+
+  /* 語意（降價對旅客是好消息 → 綠；漲價 → 紅） */
+  --focus-blue: #4c6ee6;
+  --form-focus: #9b60aa;
+  --error: #b30000;
+  --gain: #0b7a5c;
+  --gain-wash: var(--pale-green);
+  --loss: var(--error);
+  --loss-wash: #fbeeee;
+
+  /* 深色產品區塊上的文字 */
+  --on-dark: #ffffff;
+  --on-dark-muted: rgb(255 255 255 / 0.62);
+  --dark-rule: rgb(255 255 255 / 0.16);
+  --dark-surface: rgb(255 255 255 / 0.06);
+
+  /* 熱力圖：便宜 → 深綠，中段 → 石色，昂貴 → 珊瑚 */
+  --heat-low: #0b7a5c;
+  --heat-mid: var(--soft-stone);
+  --heat-high: var(--coral);
+
+  /* 字體（專有字型以文件指定的替代字型實作） */
+  --font-display:
+    "Space Grotesk Variable", "Inter Variable", "PingFang TC", "Noto Sans TC", ui-sans-serif,
+    system-ui, sans-serif;
+  --font-body:
+    "Inter Variable", "PingFang TC", "Noto Sans TC", Arial, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+
+  /* 字級：一個巨大標題，其餘收斂在 14–24px */
+  --text-micro: 12px;
+  --text-caption: 14px;
+  --text-body: 16px;
+  --text-body-lg: 18px;
+  --text-feature: 24px;
+  --text-card: clamp(24px, 1.2rem + 1vw, 32px);
+  --text-section: clamp(36px, 1.6rem + 2.4vw, 60px);
+  --text-hero: clamp(48px, 2rem + 5vw, 96px);
+
+  /* 間距：8px 基準 */
+  --space-xxs: 2px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-3xl: 56px;
+  --space-section: 80px;
+
+  /* 圓角 */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 30px;
+  --radius-pill: 32px;
+  --radius-full: 9999px;
+
+  --duration-fast: 140ms;
+  --duration-normal: 260ms;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}

@@ -1,0 +1,411 @@
+/*
+ * shadcn/ui 風格元件（Select、Checkbox、Alert Dialog、Combobox）。
+ * 行為由 Radix / cmdk 提供；外觀沿用 shadcn 的結構（1px 邊框、6–8px 圓角、柔和陰影、
+ * 左側勾選指示），顏色與字型則套用本專案的設計 token。
+ */
+
+.sc-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- 浮動面板（Popover / Select / Combobox 共用） ---------- */
+
+.sc-popover {
+  z-index: 60;
+  min-width: var(--radix-popper-anchor-width, 8rem);
+  max-height: min(var(--radix-popper-available-height, 360px), 360px);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--primary);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.08),
+    0 4px 6px -4px rgb(0 0 0 / 0.08);
+  transform-origin: var(--radix-popper-transform-origin);
+  animation: sc-pop-in 120ms ease-out;
+}
+
+@keyframes sc-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-popover,
+  .sc-alert,
+  .sc-overlay {
+    animation: none;
+  }
+}
+
+/* ---------- Select ---------- */
+
+.sc-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--canvas);
+  color: var(--primary);
+  font: inherit;
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+.sc-select-trigger--sm {
+  width: auto;
+  height: 36px;
+  padding: 0 10px 0 var(--space-md);
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+}
+
+.sc-select-trigger:hover {
+  border-color: var(--primary);
+}
+
+.sc-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.12);
+}
+
+.sc-select-trigger[data-placeholder] {
+  color: var(--muted);
+}
+
+.sc-select-trigger .sc-icon {
+  opacity: 0.5;
+}
+
+.sc-select-content {
+  max-height: min(var(--radix-select-content-available-height, 320px), 320px);
+}
+
+.sc-select-viewport {
+  padding: 4px;
+}
+
+.sc-select-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 34px;
+  padding: 6px var(--space-sm) 6px 30px;
+  border-radius: var(--radius-xs);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.sc-select-item[data-highlighted] {
+  background: var(--soft-stone);
+}
+
+.sc-select-item[data-disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.sc-select-item__indicator {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  display: inline-flex;
+  transform: translateY(-50%);
+}
+
+.sc-select-item__desc {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--text-micro);
+}
+
+/* ---------- Checkbox ---------- */
+
+.sc-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.sc-checkbox {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-xs);
+  background: var(--canvas);
+  color: var(--on-dark);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.sc-checkbox[data-state="checked"] {
+  background: var(--primary);
+}
+
+.sc-checkbox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.16);
+}
+
+.sc-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sc-checkbox__indicator svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sc-checkbox-label {
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+/* 觸控裝置：放大可點區域 */
+@media (pointer: coarse) {
+  .sc-checkbox-row {
+    min-height: 44px;
+  }
+
+  .sc-checkbox {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ---------- Alert Dialog ---------- */
+
+.sc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgb(0 0 0 / 0.5);
+  animation: sc-fade-in 150ms ease-out;
+}
+
+@keyframes sc-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sc-alert {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 71;
+  display: grid;
+  gap: var(--space-md);
+  width: min(calc(100vw - 32px), 440px);
+  padding: var(--space-xl);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--canvas);
+  color: var(--primary);
+  box-shadow: 0 20px 40px -12px rgb(0 0 0 / 0.25);
+  transform: translate(-50%, -50%);
+  animation: sc-alert-in 160ms ease-out;
+}
+
+@keyframes sc-alert-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
+}
+
+.sc-alert__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-body-lg);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.sc-alert__desc {
+  margin: 0;
+  color: var(--body-muted);
+  font-size: var(--text-caption);
+  line-height: 1.55;
+}
+
+.sc-alert__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+@media (max-width: 640px) {
+  .sc-alert {
+    top: auto;
+    bottom: 16px;
+    transform: translate(-50%, 0);
+    animation-name: sc-fade-in;
+  }
+
+  .sc-alert__footer {
+    flex-direction: column-reverse;
+  }
+
+  .sc-alert__footer .sc-btn {
+    width: 100%;
+    height: 44px;
+  }
+}
+
+.sc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 var(--space-lg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--text-caption);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.sc-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.16);
+}
+
+.sc-btn--default {
+  background: var(--primary);
+  color: var(--on-dark);
+}
+
+.sc-btn--default:hover {
+  background: var(--black);
+}
+
+.sc-btn--destructive {
+  background: var(--error);
+  color: var(--on-dark);
+}
+
+.sc-btn--destructive:hover {
+  background: #8f0000;
+}
+
+.sc-btn--outline {
+  border-color: var(--hairline);
+  background: var(--canvas);
+  color: var(--primary);
+}
+
+.sc-btn--outline:hover {
+  background: var(--soft-stone);
+}
+
+/* ---------- Combobox（cmdk Command） ---------- */
+
+.sc-command {
+  display: flex;
+  flex-direction: column;
+  width: max(var(--radix-popper-anchor-width, 0px), 300px);
+  max-width: calc(100vw - 24px);
+}
+
+.sc-command-list {
+  max-height: min(var(--radix-popper-available-height, 320px), 320px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px;
+}
+
+.sc-command-group [cmdk-group-heading] {
+  padding: 6px var(--space-sm) 4px;
+  color: var(--muted);
+  font-size: var(--text-micro);
+  font-weight: 500;
+}
+
+.sc-command-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 40px;
+  padding: 6px var(--space-sm);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  user-select: none;
+}
+
+.sc-command-item[data-selected="true"] {
+  background: var(--soft-stone);
+}
+
+.sc-command-item__code {
+  flex: none;
+  width: 3.4em;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.sc-command-item__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-command-item__meta {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+}
+
+.sc-command-item .sc-icon {
+  color: var(--slate);
+}
+
+.sc-command-empty {
+  padding: var(--space-lg) var(--space-md);
+  color: var(--muted);
+  font-size: var(--text-caption);
+  text-align: center;
+}

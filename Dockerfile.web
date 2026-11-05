@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+
+# ---------- build：Vite+ 官方工具鏈映像 ----------
+FROM ghcr.io/voidzero-dev/vite-plus:latest AS build
+WORKDIR /app
+COPY --chown=vp:vp package.json bun.lock ./
+RUN vp install --frozen-lockfile
+COPY --chown=vp:vp index.html tsconfig.json vite.config.ts ./
+COPY --chown=vp:vp public ./public
+COPY --chown=vp:vp src ./src
+RUN vp build
+
+# ---------- runtime：Nginx 提供靜態資產並反向代理 /api ----------
+FROM nginx:1.27-alpine AS runtime
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+COPY deploy/security-headers.conf /etc/nginx/snippets/security-headers.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80

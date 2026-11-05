@@ -1,0 +1,970 @@
+.explore {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: var(--space-3xl);
+  align-items: start;
+}
+
+/* ---------- 篩選欄：以頂部細線分組，不框卡片 ---------- */
+
+.filters {
+  position: sticky;
+  top: var(--space-xl);
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.filters__group {
+  display: grid;
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--primary);
+}
+
+.filters__title {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.filters__hint {
+  margin: 0;
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.filters__formula {
+  margin: 0;
+  padding: var(--space-md);
+  background: var(--soft-stone);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--body-muted);
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.switch input {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+}
+
+.range-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+/* ---------- 結果 ---------- */
+
+.results {
+  display: grid;
+  gap: var(--space-xl);
+  min-width: 0;
+}
+
+.results__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-lg);
+}
+
+.results__title {
+  font-size: var(--text-card);
+  letter-spacing: -0.01em;
+}
+
+.results__meta {
+  margin: var(--space-sm) 0 0;
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.badge {
+  padding: 1px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+}
+
+.badge--hit {
+  border-color: var(--gain);
+  color: var(--gain);
+}
+
+.sortbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.sortbar__item {
+  padding: 4px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  background: transparent;
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+  transition:
+    border-color var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.sortbar__item:hover {
+  border-color: var(--primary);
+  color: var(--ink);
+}
+
+.sortbar__item[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-dark);
+}
+
+/* 細線分隔的清單（research-table 風格） */
+.results__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--primary);
+}
+
+.results[aria-busy="true"] .results__list {
+  opacity: 0.5;
+  transition: opacity var(--duration-normal);
+}
+
+/* ---------- 單筆報價 ---------- */
+
+.offer {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 150px auto;
+  gap: var(--space-xl);
+  align-items: center;
+  padding: var(--space-xl) var(--space-md);
+  border-bottom: 1px solid var(--hairline);
+  transition: background var(--duration-fast);
+  animation: fade-up var(--duration-normal) var(--ease-out-expo) both;
+}
+
+.offer:hover {
+  background: #fafaf8;
+}
+
+.offer--skeleton {
+  height: 108px;
+  background: linear-gradient(90deg, var(--card-border), var(--soft-stone), var(--card-border));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.offer__airline {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.offer__airline img {
+  flex: none;
+}
+
+.offer__logo-fallback {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--soft-stone);
+  font-size: 10px;
+}
+
+.offer__airline strong {
+  display: block;
+  font-size: var(--text-caption);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.offer__tags {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-sm) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  padding: 1px 8px;
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.tag--cheapest {
+  color: var(--gain);
+}
+
+.tag--fastest {
+  color: var(--action-blue);
+}
+
+.tag--best_value {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-dark);
+}
+
+.offer__slices {
+  display: grid;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.slice {
+  display: grid;
+  grid-template-columns: 20px 64px minmax(32px, 1fr) 72px 128px;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.slice__label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--muted);
+}
+
+.slice__time {
+  display: grid;
+  font-family: var(--font-display);
+  font-size: var(--text-feature);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.slice__time small {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--slate);
+}
+
+.slice__time sup {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--coral);
+}
+
+.slice__track {
+  position: relative;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.slice__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--canvas);
+  border: 1.5px solid var(--coral);
+}
+
+.slice__info {
+  display: grid;
+  font-size: var(--text-caption);
+  line-height: 1.3;
+}
+
+.slice__info small {
+  font-size: var(--text-micro);
+  color: var(--slate);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 中途經停（同班機）：空心灰點，與需換機的轉機點區分 */
+.slice__dot--stop {
+  border-color: var(--muted);
+  border-style: dashed;
+}
+
+.slice__via {
+  color: var(--body-muted) !important;
+}
+
+.legs__operated,
+.legs__stop {
+  flex-basis: 100%;
+  padding-left: 84px;
+  color: var(--slate);
+  font-size: var(--text-micro);
+}
+
+.slice__direct {
+  color: var(--gain) !important;
+}
+
+.offer__price {
+  display: grid;
+  justify-items: end;
+  line-height: 1.1;
+}
+
+.offer__amount {
+  font-family: var(--font-display);
+  font-size: 32px;
+  letter-spacing: -0.02em;
+}
+
+.offer__currency {
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.offer__cost {
+  margin-top: var(--space-xs);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.offer__actions {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+}
+
+.offer__actions .btn--primary {
+  padding: 6px 16px;
+}
+
+.offer__detail {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--soft-stone);
+  border-radius: var(--radius-sm);
+}
+
+.legs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+  font-size: var(--text-caption);
+}
+
+.legs li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.legs__flight {
+  min-width: 72px;
+}
+
+.legs__meta {
+  color: var(--body-muted);
+}
+
+.legs__layover {
+  flex-basis: 100%;
+  padding-left: 84px;
+  color: var(--coral);
+  font-size: var(--text-micro);
+}
+
+.offer__conditions {
+  margin: 0;
+  font-size: var(--text-micro);
+  color: var(--body-muted);
+}
+
+/* ---------- 購票方式（整張票／分段購票） ---------- */
+
+.ticket-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: 4px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+}
+
+.ticket-mode button {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+}
+
+.ticket-mode strong {
+  font-weight: 500;
+}
+
+.ticket-mode small {
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.ticket-mode button[aria-checked="true"] {
+  background: var(--primary);
+  color: var(--on-dark);
+}
+
+.ticket-mode button[aria-checked="true"] small {
+  color: var(--on-dark-muted);
+}
+
+.offer__original {
+  font-size: 11px;
+  color: var(--slate);
+}
+
+.offer__no-watch {
+  max-width: 160px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--slate);
+  text-align: center;
+}
+
+/* ---------- 分段購票 ---------- */
+
+.split {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.split__intro {
+  display: grid;
+  gap: var(--space-sm);
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.split__intro p {
+  margin: 0;
+}
+
+.split__warn {
+  padding: var(--space-sm) var(--space-md);
+  border-left: 2px solid var(--coral);
+  background: #fff6f3;
+}
+
+.split__leg {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.split__leg-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--primary);
+}
+
+.split__leg-head h3 {
+  font-size: var(--text-feature);
+  letter-spacing: -0.01em;
+}
+
+.split__leg-meta {
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.split__skeleton {
+  height: 180px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--card-border), var(--soft-stone), var(--card-border));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.split__empty {
+  margin: 0;
+  color: var(--slate);
+  font-size: var(--text-caption);
+}
+
+.split__options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.split__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color var(--duration-fast),
+    background var(--duration-fast);
+}
+
+.split__option:hover {
+  border-color: var(--hairline);
+}
+
+.split__option.is-selected {
+  border-color: var(--primary);
+  background: #fafaf8;
+}
+
+.split__pick {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 56px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+}
+
+.split__radio {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--hairline);
+  border-radius: 50%;
+}
+
+.split__option.is-selected .split__radio {
+  border: 5px solid var(--primary);
+}
+
+.split__airline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  font-size: var(--text-caption);
+}
+
+.split__airline .sim-tag {
+  flex: none;
+  margin: 0;
+}
+
+.split__airline-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.split__times {
+  font-size: var(--text-body);
+}
+
+.split__times sup {
+  font-size: 10px;
+  color: var(--coral);
+}
+
+.split__info {
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.split__price {
+  font-family: var(--font-display);
+  font-size: var(--text-body-lg);
+  text-align: right;
+}
+
+.split__watch {
+  flex: none;
+  margin-right: var(--space-md);
+  font-size: var(--text-micro);
+}
+
+/* 合計列：捲動時固定在結果區底部 */
+.split__summary {
+  position: sticky;
+  bottom: calc(var(--space-md) + var(--safe-bottom));
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md) var(--space-xl);
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--primary);
+  color: var(--on-dark);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 32px -16px rgb(0 0 0 / 0.5);
+}
+
+.split__chosen {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm) var(--space-xl);
+  font-size: var(--text-micro);
+  color: var(--on-dark-muted);
+}
+
+.split__chosen li {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: baseline;
+}
+
+.split__chosen strong {
+  font-weight: 500;
+  color: var(--on-dark);
+}
+
+.split__total {
+  display: grid;
+  justify-items: end;
+  margin-left: auto;
+}
+
+.split__total .label {
+  color: var(--on-dark-muted);
+}
+
+.split__total strong {
+  font-family: var(--font-display);
+  font-size: var(--text-feature);
+  font-weight: 400;
+}
+
+.split__mixed {
+  font-size: var(--text-micro);
+  color: var(--coral-soft);
+}
+
+.split__summary .btn {
+  border-color: var(--dark-rule);
+  color: var(--on-dark);
+}
+
+.split__summary .btn:hover:not(:disabled) {
+  background: var(--dark-surface);
+}
+
+/* ---------- 工具列（篩選＋排序） ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: none;
+  padding: 4px 14px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-xl);
+  background: var(--canvas);
+  font-size: var(--text-caption);
+}
+
+.filter-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.filter-btn__count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--coral);
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+}
+
+/* 抽屜內的篩選：單欄、不吸頂 */
+.panel .filters {
+  position: static;
+  grid-template-columns: 1fr;
+}
+
+.panel .filters__group:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* ---------- 寬螢幕以下：航班卡改兩列 ---------- */
+
+@media (max-width: 1180px) {
+  .offer {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "airline price actions"
+      "slices slices slices";
+    row-gap: var(--space-lg);
+  }
+
+  .offer__airline {
+    grid-area: airline;
+  }
+
+  .offer__price {
+    grid-area: price;
+  }
+
+  .offer__actions {
+    grid-area: actions;
+  }
+
+  .offer__slices {
+    grid-area: slices;
+  }
+
+  .offer__detail {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------- 平板／手機：單欄、篩選進抽屜、工具列吸頂 ---------- */
+
+@media (max-width: 1024px) {
+  .explore {
+    grid-template-columns: 1fr;
+  }
+
+  .results {
+    gap: var(--space-md);
+  }
+
+  /* 讓工具列成為 .results 的直接子項，才能在整個結果區間吸頂 */
+  .results__head {
+    display: contents;
+  }
+
+  .results__title {
+    font-size: var(--text-feature);
+  }
+
+  .toolbar {
+    position: sticky;
+    top: calc(var(--navbar-h) + 1px); /* 導覽列高度 + 底線 */
+    z-index: 30;
+    margin: 0 calc(clamp(16px, 3vw, 40px) * -1);
+    padding: var(--space-sm) clamp(16px, 3vw, 40px);
+    background: rgb(255 255 255 / 0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .sortbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    min-width: 0;
+  }
+
+  .sortbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sortbar__item {
+    flex: none;
+  }
+
+  .results__list {
+    border-top: none;
+  }
+}
+
+/* ---------- 手機：緊湊航班卡 ---------- */
+
+@media (max-width: 640px) {
+  .split__pick {
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    grid-template-areas:
+      "radio airline price"
+      "radio times times"
+      "radio info info";
+    row-gap: 2px;
+  }
+
+  .split__radio {
+    grid-area: radio;
+  }
+
+  .split__airline {
+    grid-area: airline;
+  }
+
+  .split__times {
+    grid-area: times;
+  }
+
+  .split__info {
+    grid-area: info;
+  }
+
+  .split__price {
+    grid-area: price;
+  }
+
+  .split__option {
+    flex-wrap: wrap;
+  }
+
+  /* 選項本體佔滿一列，「追蹤這段」換到下一行，航司名稱才不會被截斷 */
+  .split__pick {
+    flex-basis: 100%;
+  }
+
+  .split__watch {
+    margin: -6px 0 var(--space-sm) 44px;
+  }
+
+  .split__summary {
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .split__summary .btn {
+    width: 100%;
+  }
+
+  .ticket-mode small {
+    display: none;
+  }
+
+  .offer {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "airline price"
+      "slices slices"
+      "actions actions";
+    gap: var(--space-md);
+    padding: var(--space-lg) 0;
+  }
+
+  .offer:hover {
+    background: transparent;
+  }
+
+  .offer__airline strong {
+    font-size: var(--text-caption);
+  }
+
+  .offer__tags {
+    margin-top: 4px;
+  }
+
+  .offer__amount {
+    font-size: 26px;
+  }
+
+  .offer__cost {
+    display: none;
+  }
+
+  /* 每段行程一列：去/回、起飛、航線、抵達；下方一行小字放時長與轉機 */
+  .slice {
+    grid-template-columns: 18px auto minmax(24px, 1fr) auto;
+    grid-template-areas:
+      "label dep track arr"
+      ". info info info";
+    gap: 2px var(--space-sm);
+  }
+
+  .slice__label {
+    grid-area: label;
+  }
+
+  .slice__time {
+    font-size: 19px;
+  }
+
+  .slice__time--dep {
+    grid-area: dep;
+  }
+
+  .slice__track {
+    grid-area: track;
+  }
+
+  .slice__time--arr {
+    grid-area: arr;
+    text-align: right;
+  }
+
+  .slice__info {
+    grid-area: info;
+    display: flex;
+    gap: var(--space-sm);
+    font-size: var(--text-micro);
+  }
+
+  .offer__actions {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .offer__actions .btn--primary {
+    flex: 1;
+    max-width: 60%;
+  }
+
+  .offer__detail {
+    padding: var(--space-md);
+  }
+
+  .legs__layover,
+  .legs__stop {
+    padding-left: 0;
+  }
+}

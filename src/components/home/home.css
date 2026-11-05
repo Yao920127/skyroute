@@ -1,0 +1,777 @@
+.home {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 120px;
+}
+
+/* grid 子項預設 min-width:auto 會被內容撐寬，窄螢幕上造成水平溢出 */
+.home > *,
+.hero > * {
+  min-width: 0;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding-top: var(--space-xxl);
+}
+
+.hero__title {
+  margin-top: var(--space-lg);
+  font-size: var(--text-hero);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.hero__lead {
+  max-width: 40rem;
+  margin: var(--space-xl) 0 0;
+  font-size: var(--text-body-lg);
+  line-height: 1.5;
+  color: var(--body-muted);
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-xl);
+  margin-top: var(--space-xxl);
+}
+
+/* 兩卡媒體構圖：寬的產品畫面 + 窄的示意卡 */
+.hero-media {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+  width: 100%;
+  margin-top: var(--space-3xl);
+  text-align: left;
+}
+
+.media-card {
+  position: relative;
+  margin: 0;
+  min-height: 440px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+}
+
+/* 媒體級漸層只用在大型媒體面板 */
+.media-card--route {
+  background:
+    radial-gradient(120% 90% at 30% 70%, #0b5a4b 0%, transparent 60%),
+    linear-gradient(160deg, var(--deep-green) 0%, #00201b 55%, var(--black) 100%);
+}
+
+.route-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.route-map__arc {
+  fill: none;
+  stroke: var(--coral);
+  stroke-width: 1.5;
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: draw-arc 1.6s var(--ease-out-expo) forwards;
+}
+
+.route-map__origin {
+  fill: var(--on-dark);
+}
+
+.route-map__ring {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.35);
+  transform-origin: 260px 250px;
+  animation: ping 2.4s var(--ease-out-expo) infinite;
+}
+
+.route-map__label {
+  fill: rgb(255 255 255 / 0.7);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.route-map__label--origin {
+  fill: var(--on-dark);
+}
+
+/* 疊在媒體上的主控台卡（agent-console-card） */
+.console-card {
+  position: absolute;
+  right: var(--space-xl);
+  bottom: var(--space-xl);
+  width: min(360px, calc(100% - 48px));
+  padding: var(--space-xl);
+  background: var(--primary);
+  color: var(--on-dark);
+  border: 1px solid var(--dark-rule);
+  border-radius: var(--radius-sm);
+}
+
+.console-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+}
+
+.console-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.console-card__status i {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: #3ddc97;
+}
+
+.console-card__badge {
+  padding: 1px 8px;
+  border: 1px solid var(--dark-rule);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  color: var(--on-dark-muted);
+}
+
+.console-card__log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+  font-size: var(--text-micro);
+}
+
+.console-card__log li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-md);
+  animation: fade-up var(--duration-normal) var(--ease-out-expo) both;
+}
+
+.console-card__log li:nth-child(1) {
+  animation-delay: 300ms;
+}
+.console-card__log li:nth-child(2) {
+  animation-delay: 600ms;
+}
+.console-card__log li:nth-child(3) {
+  animation-delay: 900ms;
+}
+.console-card__log li:nth-child(4) {
+  animation-delay: 1200ms;
+}
+.console-card__log li:nth-child(5) {
+  animation-delay: 1500ms;
+}
+
+.console-card__log time {
+  color: var(--on-dark-muted);
+}
+
+.console-card__log .is-gain span {
+  color: #6ee7b7;
+}
+
+.console-card__log .is-muted span {
+  color: var(--on-dark-muted);
+}
+
+.media-card--matrix {
+  display: grid;
+  align-content: space-between;
+  gap: var(--space-xl);
+  padding: var(--space-xxl);
+  background: var(--soft-stone);
+}
+
+.mini-matrix {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.mini-matrix span {
+  aspect-ratio: 1;
+  border-radius: var(--radius-xs);
+  animation: fade-up var(--duration-normal) var(--ease-out-expo) both;
+}
+
+.media-card--matrix figcaption {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.media-card--matrix strong {
+  font-family: var(--font-display);
+  font-size: var(--text-card);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.media-card--matrix figcaption > span:last-child {
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+/* 熱門航線：研究篩選風格的大膠囊 */
+.routes {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-lg);
+  margin-top: var(--space-3xl);
+}
+
+.routes__list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.route-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding: 8px 18px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  background: var(--canvas);
+  font-size: var(--text-caption);
+  transition:
+    border-color var(--duration-fast),
+    background var(--duration-fast),
+    color var(--duration-fast);
+}
+
+.route-pill .mono {
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.route-pill:hover {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-dark);
+}
+
+.route-pill:hover .mono {
+  color: var(--on-dark-muted);
+}
+
+/* ---------- 技術條（trust strip 風格，安靜、寬間距） ---------- */
+
+.stack {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-xl);
+}
+
+.stack__lead {
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.stack__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xl) var(--space-3xl);
+}
+
+.stack__list li {
+  font-family: var(--font-display);
+  font-size: var(--text-feature);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  opacity: 0.55;
+  transition: opacity var(--duration-fast);
+}
+
+.stack__list li:hover {
+  opacity: 1;
+}
+
+/* ---------- 區段標題 ---------- */
+
+.section-head {
+  display: grid;
+  gap: var(--space-md);
+  margin-bottom: var(--space-3xl);
+}
+
+.section-head__title {
+  font-size: var(--text-section);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- 三欄功能 ---------- */
+
+.capabilities__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-xxl);
+}
+
+.capability {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: var(--space-md);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--primary);
+}
+
+.capability__icon {
+  width: 56px;
+  height: 56px;
+  margin-bottom: var(--space-md);
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 1.25;
+}
+
+.capability__icon .is-hot {
+  fill: var(--coral);
+  stroke: var(--coral);
+}
+
+.capability__title {
+  font-size: var(--text-feature);
+  letter-spacing: -0.01em;
+}
+
+.capability__body {
+  margin: 0;
+  color: var(--body-muted);
+}
+
+/* ---------- 混搭航司／多航段 ---------- */
+
+.mix {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--space-3xl);
+  align-items: center;
+}
+
+.mix__copy {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-md);
+}
+
+.mix__legs {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-xxl);
+  display: grid;
+  gap: var(--space-md);
+  background: var(--soft-stone);
+  border-radius: var(--radius-lg);
+}
+
+.mix__legs li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "route airline"
+    "leg airline";
+  align-items: center;
+  padding: var(--space-lg) var(--space-xl);
+  background: var(--canvas);
+  border-radius: var(--radius-sm);
+}
+
+.mix__legs .mono {
+  grid-area: route;
+  font-size: var(--text-feature);
+}
+
+.mix__legs strong {
+  grid-area: airline;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--deep-green);
+  color: var(--on-dark);
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
+
+.mix__legs li:nth-child(2) strong {
+  background: var(--coral);
+  color: var(--primary);
+}
+
+.mix__legs small {
+  grid-area: leg;
+  color: var(--slate);
+}
+
+.mix__legs .mix__currencies {
+  display: block;
+  padding: 0;
+  background: none;
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+@media (max-width: 1024px) {
+  .mix {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- 深綠整版區塊 ---------- */
+
+.band {
+  display: grid;
+  gap: var(--space-3xl);
+  padding: clamp(32px, 6vw, 80px);
+  background: var(--deep-green);
+  color: var(--on-dark);
+  border-radius: var(--radius-lg);
+}
+
+.band__head {
+  display: grid;
+  gap: var(--space-lg);
+  max-width: 44rem;
+}
+
+.band__title {
+  font-size: var(--text-section);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.band__lead {
+  margin: 0;
+  font-size: var(--text-body-lg);
+  line-height: 1.5;
+  color: var(--on-dark-muted);
+}
+
+.pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-md);
+  counter-reset: step;
+}
+
+.pipeline__step {
+  display: grid;
+  align-content: start;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  background: var(--dark-surface);
+  border: 1px solid var(--dark-rule);
+  border-radius: var(--radius-sm);
+}
+
+.pipeline__num {
+  font-size: var(--text-micro);
+  color: var(--coral-soft);
+}
+
+.pipeline__step h3 {
+  font-size: var(--text-body-lg);
+}
+
+.pipeline__step p {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: 1.5;
+  color: var(--on-dark-muted);
+}
+
+/* ---------- 綜合代價 ---------- */
+
+.formula {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--space-3xl);
+  align-items: center;
+}
+
+.formula__copy {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.formula__lead {
+  margin: var(--space-md) 0 0;
+  font-size: var(--text-body-lg);
+  line-height: 1.5;
+  color: var(--body-muted);
+}
+
+.formula__card {
+  display: grid;
+  gap: var(--space-xl);
+  padding: var(--space-xxl);
+  background: var(--soft-stone);
+  border-radius: var(--radius-lg);
+}
+
+.formula__expr {
+  margin: 0;
+  font-size: clamp(22px, 1rem + 1.2vw, 30px);
+  line-height: 1.45;
+  color: var(--primary);
+}
+
+.formula__expr em {
+  font-style: normal;
+  color: var(--coral);
+}
+
+.formula__tags {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.tag-chip {
+  padding: 2px 12px;
+  border: 1px solid currentcolor;
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+}
+
+.tag-chip--green {
+  color: var(--gain);
+}
+
+.tag-chip--blue {
+  color: var(--action-blue);
+}
+
+.tag-chip--dark {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-dark);
+}
+
+/* ---------- 規格表（research-table 風格） ---------- */
+
+.specs__table {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid var(--primary);
+}
+
+.specs__table th,
+.specs__table td {
+  padding: var(--space-xl) 0;
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--text-body-lg);
+  font-weight: 400;
+  text-align: left;
+}
+
+.specs__table td {
+  text-align: center;
+}
+
+.specs__table .specs__value {
+  text-align: right;
+  font-size: var(--text-body);
+}
+
+.pill-outline {
+  padding: 3px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  font-size: var(--text-micro);
+  color: var(--body-muted);
+}
+
+/* ---------- 收尾 CTA ---------- */
+
+.cta {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-xxl);
+  padding: clamp(40px, 7vw, 96px);
+  background:
+    radial-gradient(80% 120% at 100% 0%, rgb(255 119 89 / 0.35) 0%, transparent 55%),
+    linear-gradient(135deg, var(--dark-navy) 0%, var(--black) 100%);
+  color: var(--on-dark);
+  border-radius: var(--radius-lg);
+}
+
+.cta__title {
+  font-size: var(--text-section);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.cta__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+@keyframes draw-arc {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes ping {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* ---------- 響應式 ---------- */
+
+@media (max-width: 1024px) {
+  .hero-media {
+    grid-template-columns: 1fr;
+  }
+
+  .capabilities__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pipeline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formula {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .home {
+    gap: 80px;
+  }
+
+  .media-card {
+    min-height: 0;
+  }
+
+  /* 小螢幕：地圖在上、主控台卡在下，不再互相覆蓋 */
+  .media-card--route {
+    display: grid;
+    padding-bottom: var(--space-lg);
+  }
+
+  .route-map {
+    position: relative;
+    height: 280px;
+  }
+
+  .console-card {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    margin: 0 var(--space-lg);
+  }
+
+  .capabilities__grid,
+  .pipeline {
+    grid-template-columns: 1fr;
+  }
+
+  .specs__table td:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .mix__legs {
+    padding: var(--space-lg);
+  }
+
+  .mix__legs li {
+    padding: var(--space-md) var(--space-lg);
+    column-gap: var(--space-md);
+  }
+
+  .mix__legs .mono {
+    font-size: var(--text-body-lg);
+  }
+
+  .mix__legs strong {
+    width: 40px;
+    height: 40px;
+  }
+
+  .hero {
+    padding-top: var(--space-md);
+  }
+
+  .hero__actions {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .hero__actions .btn--primary {
+    width: 100%;
+  }
+
+  .routes__list {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: calc(100% + 32px);
+    margin: 0 -16px;
+    padding: 0 16px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .route-pill {
+    flex: none;
+  }
+
+  .cta__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

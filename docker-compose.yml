@@ -1,0 +1,64 @@
+name: skyroute
+
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+asyncpg://skyroute:${POSTGRES_PASSWORD:-skyroute}@postgres:5432/skyroute
+  REDIS_URL: redis://redis:6379/0
+  DUFFEL_ACCESS_TOKEN: ${DUFFEL_ACCESS_TOKEN:-}
+  SECRET_KEY: ${SECRET_KEY:?請在 .env 設定 SECRET_KEY（用來加密使用者的 Duffel 金鑰）}
+  CORS_ORIGINS: '["http://localhost:8080"]'
+  ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+  PATROL_DAILY_AT: ${PATROL_DAILY_AT:-03:00}
+  PATROL_TIMEZONE: ${PATROL_TIMEZONE:-Asia/Taipei}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: skyroute
+      POSTGRES_USER: skyroute
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skyroute}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skyroute -d skyroute"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command:
+      ["redis-server", "--save", "", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    environment: *backend-env
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.worker"]
+    healthcheck:
+      disable: true # Worker 不開 HTTP，停用映像內針對 API 的健康檢查
+    environment: *backend-env
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      api: { condition: service_healthy }
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports:
+      - "8080:80"
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  pgdata:

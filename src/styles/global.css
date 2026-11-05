@@ -1,0 +1,410 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-blue);
+  outline-offset: 2px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* 大寫等寬系統標籤 */
+.label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.label--on-dark {
+  color: var(--on-dark-muted);
+}
+
+/* ---------- 表單 ---------- */
+
+.field {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.field > span {
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xs);
+  background: var(--canvas);
+  transition: border-color var(--duration-fast);
+}
+
+.input:hover {
+  border-color: var(--muted);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--form-focus);
+  box-shadow: 0 0 0 1px var(--form-focus);
+}
+
+/* ---------- 按鈕 ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 10px 22px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  line-height: 1.71;
+  white-space: nowrap;
+  transition:
+    background var(--duration-fast),
+    color var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--soft-stone);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--primary);
+  color: var(--on-dark);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--black);
+}
+
+.btn--lg {
+  padding: 12px 28px;
+  font-size: var(--text-body);
+}
+
+/* 深色表面上的主要 CTA：白色膠囊 */
+.btn--light {
+  background: var(--on-dark);
+  border-color: var(--on-dark);
+  color: var(--primary);
+}
+
+.btn--light:hover:not(:disabled) {
+  background: var(--pale-green);
+}
+
+/* 次要動作：純文字連結 */
+.btn--ghost {
+  padding: 8px 0;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-caption);
+  font-weight: 400;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--hairline);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: transparent;
+  text-decoration-color: var(--ink);
+}
+
+.btn--danger {
+  color: var(--error);
+  text-decoration-color: rgb(179 0 0 / 0.3);
+}
+
+.btn--danger:hover:not(:disabled) {
+  text-decoration-color: var(--error);
+}
+
+.btn--on-dark {
+  color: var(--on-dark);
+  text-decoration-color: var(--dark-rule);
+}
+
+.btn--on-dark:hover:not(:disabled) {
+  text-decoration-color: var(--on-dark);
+}
+
+/* ---------- 膠囊與標籤 ---------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-xl);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  transition:
+    background var(--duration-fast),
+    border-color var(--duration-fast);
+}
+
+button.chip:hover {
+  border-color: var(--primary);
+}
+
+/* 航空公司：代碼＋名稱 */
+.chip--airline {
+  max-width: 100%;
+  font-family: var(--font-body);
+}
+
+.chip--airline .chip__code {
+  font-family: var(--font-mono);
+}
+
+.chip--airline .chip__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+/* 轉機樞紐：珊瑚色分類標籤 */
+.chip--hub {
+  border-color: var(--coral-soft);
+  color: var(--ink);
+}
+
+.chip[aria-pressed="true"].chip--allow {
+  background: var(--coral);
+  border-color: var(--coral);
+  color: var(--primary);
+}
+
+.chip[aria-pressed="true"].chip--avoid {
+  border-color: var(--primary);
+  color: var(--slate);
+  text-decoration: line-through;
+}
+
+.chip[aria-pressed="true"].chip--pick {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-dark);
+}
+
+/* ---------- 分段選擇 ---------- */
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+}
+
+.segmented button {
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  color: var(--body-muted);
+}
+
+.segmented button:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.segmented button[aria-checked="true"] {
+  background: var(--primary);
+  color: var(--on-dark);
+}
+
+.segmented button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ---------- 模擬資料標示（Duffel 測試模式） ---------- */
+
+.sim-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 6px 0 0;
+  padding: 1px 8px;
+  border: 1px dashed var(--coral);
+  border-radius: var(--radius-full);
+  background: #fff6f3;
+  color: #b4482f;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.sim-tag::before {
+  content: "⚠";
+  font-size: 10px;
+}
+
+.sim-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+  padding: var(--space-md) var(--space-lg);
+  border: 1px dashed var(--coral);
+  border-radius: var(--radius-sm);
+  background: #fff6f3;
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.sim-banner .sim-tag {
+  margin: 0;
+}
+
+/* ---------- 趨勢與狀態 ---------- */
+
+.trend--down {
+  color: var(--gain);
+}
+
+.trend--up {
+  color: var(--loss);
+}
+
+.trend--flat,
+.trend--none {
+  color: var(--muted);
+}
+
+.notice {
+  margin: 0;
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm);
+  color: var(--error);
+  font-size: var(--text-caption);
+}
+
+.notice--action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.notice--action .btn {
+  flex: none;
+}
+
+.empty {
+  padding: var(--space-3xl) var(--space-xl);
+  text-align: center;
+  color: var(--body-muted);
+  background: var(--soft-stone);
+  border-radius: var(--radius-lg);
+}
+
+.empty p {
+  margin: 4px 0;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

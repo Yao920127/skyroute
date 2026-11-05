@@ -1,0 +1,239 @@
+.matrix {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.matrix__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-lg) var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--primary);
+}
+
+.matrix__head h2 {
+  font-size: var(--text-card);
+  letter-spacing: -0.01em;
+}
+
+.matrix__sub {
+  margin: var(--space-sm) 0 0;
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.matrix__radius {
+  margin-left: auto;
+  width: 220px;
+}
+
+.matrix__progress {
+  min-width: 7rem;
+  text-align: right;
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.matrix__best {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin: 0;
+  font-size: var(--text-caption);
+  color: var(--body-muted);
+}
+
+.matrix__best strong {
+  font-family: var(--font-display);
+  font-size: var(--text-feature);
+  font-weight: 400;
+  color: var(--gain);
+}
+
+.matrix__legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: auto;
+  font-size: var(--text-micro);
+  color: var(--slate);
+}
+
+.matrix__legend i {
+  width: 140px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--heat-low), var(--heat-mid), var(--heat-high));
+}
+
+.matrix__scroll {
+  overflow-x: auto;
+  padding: var(--space-xl);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+}
+
+.heat {
+  border-collapse: separate;
+  border-spacing: 4px;
+  margin: 0 auto;
+}
+
+.heat th {
+  padding: var(--space-xs) var(--space-sm);
+  font-weight: 400;
+}
+
+.heat__corner {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.heat__date {
+  display: grid;
+  justify-items: center;
+  line-height: 1.2;
+  font-size: var(--text-caption);
+}
+
+.heat__date small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.heat__date--anchor .mono {
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--on-dark);
+}
+
+.heat__cell {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 100%;
+  min-width: 92px;
+  height: 56px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+}
+
+.heat__cell--ok {
+  transition: transform var(--duration-fast) var(--ease-out-expo);
+  animation: fade-up var(--duration-normal) var(--ease-out-expo) both;
+}
+
+.heat__cell--ok:hover {
+  transform: scale(1.05);
+  position: relative;
+  z-index: 1;
+}
+
+.heat__cell--selected {
+  border: 1.5px solid var(--primary);
+}
+
+.heat__cell--best {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.heat__cell--loading {
+  background: linear-gradient(90deg, var(--card-border), var(--soft-stone), var(--card-border));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+.heat__cell--muted {
+  background: var(--card-border);
+  color: var(--muted);
+  font-size: var(--text-micro);
+}
+
+.heat__cell--void {
+  background: repeating-linear-gradient(-45deg, transparent 0 5px, var(--card-border) 5px 7px);
+}
+
+.heat__cached {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* 平板：縮小格子讓 7 欄完整放下 */
+@media (max-width: 1024px) {
+  .heat__cell {
+    min-width: 72px;
+    height: 50px;
+  }
+}
+
+/* 手機：縮小格子、固定左側日期欄，橫向滑動時仍看得到對應日期 */
+@media (max-width: 640px) {
+  .matrix__radius {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .matrix__progress {
+    text-align: left;
+  }
+
+  .matrix__legend {
+    margin-left: 0;
+  }
+
+  .matrix__scroll {
+    padding: var(--space-sm);
+    margin: 0 calc(var(--space-sm) * -1);
+  }
+
+  .heat {
+    border-spacing: 3px;
+  }
+
+  .heat th {
+    padding: var(--space-xs) 4px;
+  }
+
+  .heat th[scope="row"],
+  .heat__corner {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--canvas);
+  }
+
+  .heat__corner {
+    font-size: 10px;
+  }
+
+  .heat__cell {
+    min-width: 62px;
+    height: 46px;
+    font-size: var(--text-micro);
+  }
+
+  .heat__cached {
+    display: none;
+  }
+}
+
+.heat__currency {
+  display: block;
+  margin-top: 2px;
+  color: var(--slate);
+}
+
+.matrix__fx {
+  font-size: var(--text-micro);
+  color: var(--slate);
+}

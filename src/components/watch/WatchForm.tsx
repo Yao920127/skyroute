@@ -1,0 +1,220 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+
+import { useApiKey } from "../../hooks/useApiKey.ts";
+import { useI18n } from "../../i18n/i18n.ts";
+import { api } from "../../lib/api.ts";
+import { formatPrice, useCurrency } from "../../lib/currency.ts";
+import { cabinLabel, dateWithWeekday } from "../../lib/format.ts";
+import type { SearchState, WatchlistCreate } from "../../lib/types.ts";
+import { ApiErrorNotice } from "../settings/ApiErrorNotice.tsx";
+import { Select } from "../ui/Select.tsx";
+
+export type WatchDraft = {
+  trip: SearchState;
+  airline?: string;
+  /** 目前價格（顯示幣別） */
+  price?: number;
+  currency?: string;
+};
+
+type Props = {
+  draft: WatchDraft;
+  onClose: () => void;
+  onCreated: () => void;
+};
+
+const SUGGESTED_DISCOUNT = 0.92;
+
+function initialForm(draft: WatchDraft) {
+  const { trip } = draft;
+  return {
+    label: "",
+    targetPrice: draft.price ? String(Math.floor(draft.price * SUGGESTED_DISCOUNT)) : "",
+    dropPercent: "10",
+    airline: draft.airline ?? "",
+    webhook: "",
+    maxStops: trip.direct_only ? 0 : trip.max_stops,
+  };
+}
+
+export function WatchForm({ draft, onClose, onCreated }: Props) {
+  const { lang, locale, t } = useI18n();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [form, setForm] = useState(() => initialForm(draft));
+  const queryClient = useQueryClient();
+  const apiKey = useApiKey();
+  const displayCurrency = useCurrency();
+  // 目標價以建立當下的價格幣別為準（搜尋結果已換算成顯示幣別）
+  const currency = draft.currency ?? displayCurrency;
+  const { trip } = draft;
+
+  useEffect(() => {
+    dialogRef.current?.showModal();
+  }, []);
+
+  const create = useMutation({
+    mutationFn: (payload: WatchlistCreate) => api.createWatchlist(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["watchlists"] });
+      onCreated();
+    },
+  });
+
+  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    create.mutate({
+      origin: trip.origin,
+      destination: trip.destination,
+      departure_date: trip.departure_date,
+      return_date: trip.trip_type === "rt" ? trip.return_date : null,
+      extra_legs: [],
+      adults: trip.adults,
+      children: trip.children,
+      cabin_class: trip.cabin_class,
+      label: form.label.trim() || null,
+      target_price: form.targetPrice ? Number(form.targetPrice) : null,
+      drop_percent: form.dropPercent ? Number(form.dropPercent) : null,
+      preferred_airline: form.airline.trim().toUpperCase() || null,
+      allowed_transits: trip.allowed_hubs,
+      excluded_transits: trip.excluded_hubs,
+      max_stops: form.maxStops,
+      min_layover_minutes: trip.min_layover_minutes,
+      max_layover_minutes: trip.max_layover_minutes,
+      webhook_url: form.webhook.trim() || null,
+      currency,
+    });
+  };
+
+  const hasThreshold = Boolean(form.targetPrice || form.dropPercent);
+  const isRoundTrip = trip.trip_type === "rt" && trip.return_date;
+  const dates = isRoundTrip
+    ? `${dateWithWeekday(trip.departure_date, lang)} ⇄ ${dateWithWeekday(trip.return_date!, lang)}`
+    : `${dateWithWeekday(trip.departure_date, lang)}${t("watch.oneWay")}`;
+  const pax =
+    t("watch.paxAdults", { n: trip.adults }) +
+    (trip.children ? t("watch.paxChildren", { n: trip.children }) : "");
+
+  return (
+    <dialog ref={dialogRef} className="sheet" onClose={onClose} aria-labelledby="watch-form-title">
+      <form className="sheet__body" onSubmit={handleSubmit}>
+        <header className="sheet__head">
+          <p className="sheet__kicker mono">{t("watch.kicker")}</p>
+          <h2 id="watch-form-title">
+            <span className="mono">{trip.origin}</span> →{" "}
+            <span className="mono">{trip.destination}</span>
+          </h2>
+          <p className="sheet__trip">
+            {t("watch.trip", { dates, pax, cabin: cabinLabel(trip.cabin_class, t) })}
+            {draft.price
+              ? t("watch.current", { price: formatPrice(draft.price, currency, locale) })
+              : ""}
+          </p>
+          {(trip.allowed_hubs.length > 0 || trip.excluded_hubs.length > 0) && (
+            <p className="sheet__hubs">
+              {trip.allowed_hubs.length > 0 && t("watch.via", { v: trip.allowed_hubs.join(", ") })}
+              {trip.excluded_hubs.length > 0 &&
+                t("watch.avoid", { v: trip.excluded_hubs.join(", ") })}
+            </p>
+          )}
+        </header>
+
+        <div className="sheet__grid">
+          <label className="field">
+            <span>{t("watch.label")}</span>
+            <input
+              className="input"
+              maxLength={100}
+              value={form.label}
+              placeholder={t("watch.labelPh")}
+              onChange={(e) => set("label", e.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>{t("watch.airline")}</span>
+            <input
+              className="input mono"
+              maxLength={2}
+              value={form.airline}
+              placeholder="BR"
+              onChange={(e) => set("airline", e.target.value.toUpperCase())}
+            />
+          </label>
+          <label className="field">
+            <span>{t("watch.target", { currency })}</span>
+            <input
+              className="input mono"
+              type="number"
+              inputMode="decimal"
+              min={1}
+              step="0.01"
+              value={form.targetPrice}
+              onChange={(e) => set("targetPrice", e.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>{t("watch.drop")}</span>
+            <input
+              className="input mono"
+              type="number"
+              inputMode="decimal"
+              min={0.5}
+              max={90}
+              step="0.5"
+              value={form.dropPercent}
+              onChange={(e) => set("dropPercent", e.target.value)}
+            />
+          </label>
+          <div className="field">
+            <span>{t("watch.maxStops")}</span>
+            <Select
+              value={String(form.maxStops)}
+              onValueChange={(v) => set("maxStops", Number(v))}
+              ariaLabel={t("watch.maxStops")}
+              options={[
+                { value: "0", label: t("watch.direct") },
+                { value: "1", label: t("watch.stopsN", { n: 1 }) },
+                { value: "2", label: t("watch.stopsN", { n: 2 }) },
+              ]}
+            />
+          </div>
+          <label className="field sheet__wide">
+            <span>{t("watch.webhook")}</span>
+            <input
+              className="input mono"
+              type="url"
+              inputMode="url"
+              placeholder="https://discord.com/api/webhooks/…"
+              value={form.webhook}
+              onChange={(e) => set("webhook", e.target.value)}
+            />
+          </label>
+        </div>
+
+        <p className="sheet__note">{t("watch.note")}</p>
+        {apiKey && <p className="sheet__note">{t("watch.ownKeyNote")}</p>}
+        {create.isError && <ApiErrorNotice error={create.error} />}
+
+        <footer className="sheet__foot">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => dialogRef.current?.close()}
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={!hasThreshold || create.isPending}
+          >
+            {create.isPending ? t("watch.submitting") : t("watch.submit")}
+          </button>
+        </footer>
+      </form>
+    </dialog>
+  );
+}

@@ -1,0 +1,578 @@
+[
+ {
+  "iata_code": "TPE",
+  "city_code": "TPE",
+  "name_zh": "臺灣桃園國際機場",
+  "name_en": "Taiwan Taoyuan International Airport",
+  "country": "TW",
+  "timezone": "Asia/Taipei",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "TSA",
+  "city_code": "TPE",
+  "name_zh": "臺北松山機場",
+  "name_en": "Taipei Songshan Airport",
+  "country": "TW",
+  "timezone": "Asia/Taipei",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "KHH",
+  "city_code": "KHH",
+  "name_zh": "高雄國際機場",
+  "name_en": "Kaohsiung International Airport",
+  "country": "TW",
+  "timezone": "Asia/Taipei",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "RMQ",
+  "city_code": "RMQ",
+  "name_zh": "臺中國際機場",
+  "name_en": "Taichung International Airport",
+  "country": "TW",
+  "timezone": "Asia/Taipei",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "TYO",
+  "city_code": "TYO",
+  "name_zh": "東京（所有機場）",
+  "name_en": "Tokyo (all airports)",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "city"
+ },
+ {
+  "iata_code": "HND",
+  "city_code": "TYO",
+  "name_zh": "東京羽田機場",
+  "name_en": "Haneda Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "NRT",
+  "city_code": "TYO",
+  "name_zh": "東京成田國際機場",
+  "name_en": "Narita International Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "OSA",
+  "city_code": "OSA",
+  "name_zh": "大阪（所有機場）",
+  "name_en": "Osaka (all airports)",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "city"
+ },
+ {
+  "iata_code": "KIX",
+  "city_code": "OSA",
+  "name_zh": "關西國際機場",
+  "name_en": "Kansai International Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "ITM",
+  "city_code": "OSA",
+  "name_zh": "大阪伊丹機場",
+  "name_en": "Osaka Itami Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "NGO",
+  "city_code": "NGO",
+  "name_zh": "中部國際機場",
+  "name_en": "Chubu Centrair International Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "FUK",
+  "city_code": "FUK",
+  "name_zh": "福岡機場",
+  "name_en": "Fukuoka Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "CTS",
+  "city_code": "SPK",
+  "name_zh": "新千歲機場",
+  "name_en": "New Chitose Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "OKA",
+  "city_code": "OKA",
+  "name_zh": "那霸機場",
+  "name_en": "Naha Airport",
+  "country": "JP",
+  "timezone": "Asia/Tokyo",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "SEL",
+  "city_code": "SEL",
+  "name_zh": "首爾（所有機場）",
+  "name_en": "Seoul (all airports)",
+  "country": "KR",
+  "timezone": "Asia/Seoul",
+  "kind": "city"
+ },
+ {
+  "iata_code": "ICN",
+  "city_code": "SEL",
+  "name_zh": "仁川國際機場",
+  "name_en": "Incheon International Airport",
+  "country": "KR",
+  "timezone": "Asia/Seoul",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "GMP",
+  "city_code": "SEL",
+  "name_zh": "金浦國際機場",
+  "name_en": "Gimpo International Airport",
+  "country": "KR",
+  "timezone": "Asia/Seoul",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "PUS",
+  "city_code": "PUS",
+  "name_zh": "釜山金海國際機場",
+  "name_en": "Gimhae International Airport",
+  "country": "KR",
+  "timezone": "Asia/Seoul",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "HKG",
+  "city_code": "HKG",
+  "name_zh": "香港國際機場",
+  "name_en": "Hong Kong International Airport",
+  "country": "HK",
+  "timezone": "Asia/Hong_Kong",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "MFM",
+  "city_code": "MFM",
+  "name_zh": "澳門國際機場",
+  "name_en": "Macau International Airport",
+  "country": "MO",
+  "timezone": "Asia/Macau",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "BKK",
+  "city_code": "BKK",
+  "name_zh": "曼谷蘇凡納布機場",
+  "name_en": "Suvarnabhumi Airport",
+  "country": "TH",
+  "timezone": "Asia/Bangkok",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "DMK",
+  "city_code": "BKK",
+  "name_zh": "曼谷廊曼機場",
+  "name_en": "Don Mueang International Airport",
+  "country": "TH",
+  "timezone": "Asia/Bangkok",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "SIN",
+  "city_code": "SIN",
+  "name_zh": "新加坡樟宜機場",
+  "name_en": "Singapore Changi Airport",
+  "country": "SG",
+  "timezone": "Asia/Singapore",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "KUL",
+  "city_code": "KUL",
+  "name_zh": "吉隆坡國際機場",
+  "name_en": "Kuala Lumpur International Airport",
+  "country": "MY",
+  "timezone": "Asia/Kuala_Lumpur",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "MNL",
+  "city_code": "MNL",
+  "name_zh": "馬尼拉國際機場",
+  "name_en": "Ninoy Aquino International Airport",
+  "country": "PH",
+  "timezone": "Asia/Manila",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "SGN",
+  "city_code": "SGN",
+  "name_zh": "胡志明市新山一機場",
+  "name_en": "Tan Son Nhat International Airport",
+  "country": "VN",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "HAN",
+  "city_code": "HAN",
+  "name_zh": "河內內排國際機場",
+  "name_en": "Noi Bai International Airport",
+  "country": "VN",
+  "timezone": "Asia/Bangkok",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "CGK",
+  "city_code": "JKT",
+  "name_zh": "雅加達蘇卡諾哈達機場",
+  "name_en": "Soekarno-Hatta International Airport",
+  "country": "ID",
+  "timezone": "Asia/Jakarta",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "DPS",
+  "city_code": "DPS",
+  "name_zh": "峇里島伍拉賴機場",
+  "name_en": "Ngurah Rai International Airport",
+  "country": "ID",
+  "timezone": "Asia/Makassar",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "PVG",
+  "city_code": "SHA",
+  "name_zh": "上海浦東國際機場",
+  "name_en": "Shanghai Pudong International Airport",
+  "country": "CN",
+  "timezone": "Asia/Shanghai",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "PEK",
+  "city_code": "BJS",
+  "name_zh": "北京首都國際機場",
+  "name_en": "Beijing Capital International Airport",
+  "country": "CN",
+  "timezone": "Asia/Shanghai",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "DEL",
+  "city_code": "DEL",
+  "name_zh": "德里英迪拉甘地國際機場",
+  "name_en": "Indira Gandhi International Airport",
+  "country": "IN",
+  "timezone": "Asia/Kolkata",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "DXB",
+  "city_code": "DXB",
+  "name_zh": "杜拜國際機場",
+  "name_en": "Dubai International Airport",
+  "country": "AE",
+  "timezone": "Asia/Dubai",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "DOH",
+  "city_code": "DOH",
+  "name_zh": "杜哈哈馬德國際機場",
+  "name_en": "Hamad International Airport",
+  "country": "QA",
+  "timezone": "Asia/Qatar",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "IST",
+  "city_code": "IST",
+  "name_zh": "伊斯坦堡機場",
+  "name_en": "Istanbul Airport",
+  "country": "TR",
+  "timezone": "Europe/Istanbul",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "LON",
+  "city_code": "LON",
+  "name_zh": "倫敦（所有機場）",
+  "name_en": "London (all airports)",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "kind": "city"
+ },
+ {
+  "iata_code": "LHR",
+  "city_code": "LON",
+  "name_zh": "倫敦希斯洛機場",
+  "name_en": "Heathrow Airport",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "LGW",
+  "city_code": "LON",
+  "name_zh": "倫敦蓋威克機場",
+  "name_en": "Gatwick Airport",
+  "country": "GB",
+  "timezone": "Europe/London",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "PAR",
+  "city_code": "PAR",
+  "name_zh": "巴黎（所有機場）",
+  "name_en": "Paris (all airports)",
+  "country": "FR",
+  "timezone": "Europe/Paris",
+  "kind": "city"
+ },
+ {
+  "iata_code": "CDG",
+  "city_code": "PAR",
+  "name_zh": "巴黎戴高樂機場",
+  "name_en": "Paris Charles de Gaulle Airport",
+  "country": "FR",
+  "timezone": "Europe/Paris",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "ORY",
+  "city_code": "PAR",
+  "name_zh": "巴黎奧利機場",
+  "name_en": "Paris Orly Airport",
+  "country": "FR",
+  "timezone": "Europe/Paris",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "AMS",
+  "city_code": "AMS",
+  "name_zh": "阿姆斯特丹史基浦機場",
+  "name_en": "Amsterdam Airport Schiphol",
+  "country": "NL",
+  "timezone": "Europe/Amsterdam",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "FRA",
+  "city_code": "FRA",
+  "name_zh": "法蘭克福機場",
+  "name_en": "Frankfurt Airport",
+  "country": "DE",
+  "timezone": "Europe/Berlin",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "MUC",
+  "city_code": "MUC",
+  "name_zh": "慕尼黑機場",
+  "name_en": "Munich Airport",
+  "country": "DE",
+  "timezone": "Europe/Berlin",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "ZRH",
+  "city_code": "ZRH",
+  "name_zh": "蘇黎世機場",
+  "name_en": "Zurich Airport",
+  "country": "CH",
+  "timezone": "Europe/Zurich",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "VIE",
+  "city_code": "VIE",
+  "name_zh": "維也納國際機場",
+  "name_en": "Vienna International Airport",
+  "country": "AT",
+  "timezone": "Europe/Vienna",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "PRG",
+  "city_code": "PRG",
+  "name_zh": "布拉格機場",
+  "name_en": "Václav Havel Airport Prague",
+  "country": "CZ",
+  "timezone": "Europe/Prague",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "MIL",
+  "city_code": "MIL",
+  "name_zh": "米蘭（所有機場）",
+  "name_en": "Milan (all airports)",
+  "country": "IT",
+  "timezone": "Europe/Rome",
+  "kind": "city"
+ },
+ {
+  "iata_code": "MXP",
+  "city_code": "MIL",
+  "name_zh": "米蘭馬爾彭薩機場",
+  "name_en": "Milan Malpensa Airport",
+  "country": "IT",
+  "timezone": "Europe/Rome",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "LIN",
+  "city_code": "MIL",
+  "name_zh": "米蘭利納特機場",
+  "name_en": "Milan Linate Airport",
+  "country": "IT",
+  "timezone": "Europe/Rome",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "FCO",
+  "city_code": "ROM",
+  "name_zh": "羅馬菲烏米奇諾機場",
+  "name_en": "Rome Fiumicino Airport",
+  "country": "IT",
+  "timezone": "Europe/Rome",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "MAD",
+  "city_code": "MAD",
+  "name_zh": "馬德里巴拉哈斯機場",
+  "name_en": "Adolfo Suárez Madrid–Barajas Airport",
+  "country": "ES",
+  "timezone": "Europe/Madrid",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "BCN",
+  "city_code": "BCN",
+  "name_zh": "巴塞隆納機場",
+  "name_en": "Barcelona–El Prat Airport",
+  "country": "ES",
+  "timezone": "Europe/Madrid",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "NYC",
+  "city_code": "NYC",
+  "name_zh": "紐約（所有機場）",
+  "name_en": "New York (all airports)",
+  "country": "US",
+  "timezone": "America/New_York",
+  "kind": "city"
+ },
+ {
+  "iata_code": "JFK",
+  "city_code": "NYC",
+  "name_zh": "紐約甘迺迪國際機場",
+  "name_en": "John F. Kennedy International Airport",
+  "country": "US",
+  "timezone": "America/New_York",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "EWR",
+  "city_code": "NYC",
+  "name_zh": "紐華克自由國際機場",
+  "name_en": "Newark Liberty International Airport",
+  "country": "US",
+  "timezone": "America/New_York",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "LAX",
+  "city_code": "LAX",
+  "name_zh": "洛杉磯國際機場",
+  "name_en": "Los Angeles International Airport",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "SFO",
+  "city_code": "SFO",
+  "name_zh": "舊金山國際機場",
+  "name_en": "San Francisco International Airport",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "SEA",
+  "city_code": "SEA",
+  "name_zh": "西雅圖塔科馬國際機場",
+  "name_en": "Seattle–Tacoma International Airport",
+  "country": "US",
+  "timezone": "America/Los_Angeles",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "YVR",
+  "city_code": "YVR",
+  "name_zh": "溫哥華國際機場",
+  "name_en": "Vancouver International Airport",
+  "country": "CA",
+  "timezone": "America/Vancouver",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "SYD",
+  "city_code": "SYD",
+  "name_zh": "雪梨金斯福德史密斯機場",
+  "name_en": "Sydney Kingsford Smith Airport",
+  "country": "AU",
+  "timezone": "Australia/Sydney",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "MEL",
+  "city_code": "MEL",
+  "name_zh": "墨爾本機場",
+  "name_en": "Melbourne Airport",
+  "country": "AU",
+  "timezone": "Australia/Melbourne",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "BNE",
+  "city_code": "BNE",
+  "name_zh": "布里斯本機場",
+  "name_en": "Brisbane Airport",
+  "country": "AU",
+  "timezone": "Australia/Brisbane",
+  "kind": "airport"
+ },
+ {
+  "iata_code": "AKL",
+  "city_code": "AKL",
+  "name_zh": "奧克蘭國際機場",
+  "name_en": "Auckland Airport",
+  "country": "NZ",
+  "timezone": "Pacific/Auckland",
+  "kind": "airport"
+ }
+]

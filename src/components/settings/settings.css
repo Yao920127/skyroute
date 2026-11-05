@@ -1,0 +1,115 @@
+.keysheet {
+  width: min(560px, calc(100vw - 24px));
+}
+
+.keysheet a {
+  color: var(--action-blue);
+}
+
+.keysheet__status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm) var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--soft-stone);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-caption);
+}
+
+.keysheet__status strong {
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.keysheet__status .btn--ghost {
+  margin-left: auto;
+  padding: 0;
+}
+
+.keysheet__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.keysheet__status.is-own .keysheet__dot {
+  background: var(--gain);
+}
+
+.keysheet__input {
+  display: flex;
+  gap: var(--space-md);
+  align-items: center;
+}
+
+.keysheet__input .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.keysheet__error,
+.keysheet__warn {
+  margin: calc(var(--space-md) * -1) 0 0;
+  font-size: var(--text-micro);
+}
+
+.keysheet__error {
+  color: var(--error);
+}
+
+.keysheet__warn {
+  padding: var(--space-sm) var(--space-md);
+  border-left: 2px solid var(--coral);
+  color: var(--body-muted);
+}
+
+.keysheet__notes {
+  margin: 0;
+  padding-left: 1.1em;
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-micro);
+  color: var(--body-muted);
+}
+
+/* 導覽列上的金鑰狀態按鈕 */
+.keychip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+  background: transparent;
+  font-size: var(--text-micro);
+  white-space: nowrap;
+  transition: border-color var(--duration-fast);
+}
+
+.keychip:hover {
+  border-color: var(--primary);
+}
+
+.keychip i {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.keychip.is-own i {
+  background: var(--gain);
+}
+
+.keychip.is-missing {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.keychip.is-missing i {
+  background: var(--error);
+}

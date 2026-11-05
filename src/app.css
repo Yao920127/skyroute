@@ -1,0 +1,123 @@
+.announce {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 36px;
+  padding: 0 var(--space-lg);
+  background: var(--black);
+  color: var(--on-dark);
+  font-size: var(--text-micro);
+  text-align: center;
+}
+
+.announce__link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.announce a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
+
+.shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 40px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  justify-self: start;
+  min-height: 44px;
+  color: var(--primary);
+  text-decoration: none;
+  border-radius: var(--radius-full);
+}
+
+.brand:hover .brand__mark {
+  transform: rotate(45deg);
+}
+
+.brand__mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--deep-green);
+  color: var(--on-dark);
+  font-size: 14px;
+  transition: transform var(--duration-normal) var(--ease-out-expo);
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.stage {
+  display: grid;
+  gap: var(--space-section);
+  padding: var(--space-xxl) 0 var(--space-section);
+  min-width: 0;
+}
+
+/* 頁首標題區：一個巨大的宣告，其餘收斂 */
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-xl);
+}
+
+.page-head__title {
+  font-size: var(--text-hero);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.page-head__lead {
+  max-width: 34rem;
+  margin: var(--space-lg) 0 0;
+  font-size: var(--text-body-lg);
+  line-height: 1.4;
+  color: var(--body-muted);
+}
+
+@media (max-width: 1024px) {
+  .stage {
+    gap: var(--space-3xl);
+  }
+
+  /* 已有搜尋結果時隱藏大標題，讓結果更早出現在畫面上 */
+  .page-head--has-results {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .announce {
+    padding: 6px var(--space-lg);
+    line-height: 1.4;
+  }
+
+  .page-head__title {
+    font-size: clamp(40px, 11vw, 56px);
+  }
+
+  .stage {
+    padding-top: var(--space-xl);
+    gap: var(--space-xxl);
+  }
+}

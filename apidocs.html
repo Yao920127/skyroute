@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW" data-mode="system">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Duffel Flights API 使用指南（Python）</title>
+<script>
+/* 在繪製前先決定主題，避免閃爍 */
+(function () {
+  var mode = localStorage.getItem('duffel-theme-mode') || 'system';
+  var dark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.mode = mode;
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+})();
+</script>
+<style>
+:root, :root[data-theme="dark"] {
+  --bg: #0a0a0a; --surface: #191919; --surface-2: #1a1c20; --border: #212327; --pill-border: rgba(255,255,255,.25);
+  --text: #ffffff; --body: #dadbdf; --muted: #7d8187; --accent: #ffffff; --on-accent: #0a0a0a; --accent-soft: rgba(255,255,255,.1);
+  --code-bg: #0a0a0a; --code-text: #dadbdf;
+  --tok-kw: #c4b5fd; --tok-str: #ffc285; --tok-com: #7d8187; --tok-num: #a0c3ec; --tok-fn: #ff7a17; --tok-key: #a0c3ec;
+  --note: #a0c3ec; --note-bg: #0d1726; --caution: #ff7a17; --caution-bg: #1c1209; --tip: #c4b5fd; --tip-bg: #15122a;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #fafaf9; --surface: #ffffff; --surface-2: #f1f1ef; --border: #e4e4e7; --pill-border: rgba(10,10,10,.28);
+  --text: #0a0a0a; --body: #3f4147; --muted: #6b6f76; --accent: #0a0a0a; --on-accent: #ffffff; --accent-soft: rgba(10,10,10,.07);
+  --code-bg: #f4f4f2; --code-text: #24262b;
+  --tok-kw: #7c3aed; --tok-str: #b45309; --tok-com: #7d8187; --tok-num: #1d5fa8; --tok-fn: #c2570c; --tok-key: #1d5fa8;
+  --note: #1d5fa8; --note-bg: #eef4fb; --caution: #c2570c; --caution-bg: #fdf3ea; --tip: #7c3aed; --tip-bg: #f4f0fd;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+body { margin: 0; background: var(--bg); color: var(--body); line-height: 1.75; font-weight: 400;
+  font-family: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+a { color: var(--text); text-decoration: underline; text-decoration-color: var(--pill-border); text-underline-offset: 3px; } a:hover { text-decoration-color: var(--text); }
+b, strong { font-weight: 400; color: var(--text); }
+code, pre, .mono { font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+:not(pre) > code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: .06em .36em; font-size: .86em; color: var(--text); }
+
+header.top { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 14px; height: 58px; padding: 0 24px;
+  background: var(--bg); border-bottom: 1px solid var(--border); }
+header.top .brand { color: var(--text); white-space: nowrap; }
+header.top .brand small { color: var(--muted); margin-left: 10px; font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; }
+header.top .spacer { flex: 1; }
+#menu-btn { display: none; background: none; border: 1px solid var(--pill-border); color: var(--text); border-radius: 9999px; padding: 4px 14px; font-size: 14px; cursor: pointer; }
+
+.theme-switch { display: inline-flex; gap: 6px; }
+.theme-switch button { border: 1px solid var(--pill-border); background: transparent; color: var(--text); padding: 4px 14px; font-size: 14px; line-height: 20px; cursor: pointer; font-family: inherit; border-radius: 9999px; }
+.theme-switch button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.theme-switch button:focus-visible, #menu-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+.layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); max-width: 1380px; margin: 0 auto; }
+nav.side { position: sticky; top: 58px; align-self: start; height: calc(100vh - 58px); overflow-y: auto; padding: 24px 16px 40px 24px; border-right: 1px solid var(--border); }
+nav.side input { width: 100%; padding: 8px 16px; border: 1px solid var(--border); border-radius: 9999px; background: var(--surface-2); color: var(--text); font-size: 14px; margin-bottom: 16px; font-family: inherit; }
+nav.side h4 { margin: 24px 0 6px 12px; font: 400 12px/16px "Geist Mono", ui-monospace, monospace; letter-spacing: 1.2px; color: var(--muted); text-transform: uppercase; }
+nav.side a { display: block; padding: 4px 12px; border: 1px solid transparent; border-radius: 9999px; color: var(--body); font-size: 14px; line-height: 20px; margin: 2px 0; text-decoration: none; }
+nav.side a:hover { background: var(--surface-2); }
+nav.side a.active { border-color: var(--pill-border); color: var(--text); }
+nav.side a.hidden, nav.side h4.hidden { display: none; }
+
+main { padding: 48px clamp(18px, 4vw, 64px) 120px; min-width: 0; }
+section.guide { padding-bottom: 48px; margin-bottom: 48px; border-bottom: 1px solid var(--border); }
+section.guide:last-of-type { border-bottom: 0; }
+h1, h2, h3 { font-weight: 400; color: var(--text); }
+h1 { font-size: clamp(2.6rem, 1.2rem + 5vw, 6rem); line-height: 1; letter-spacing: -0.025em; margin: 0 0 24px; }
+h2 { font-size: clamp(1.9rem, 1.2rem + 2vw, 3rem); line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 20px; }
+h3 { font-size: 1.25rem; line-height: 1.4; letter-spacing: -0.01em; margin: 36px 0 8px; }
+h2 .tag { display: block; margin: 0 0 12px; order: -1; font: 400 14px/20px "Geist Mono", ui-monospace, monospace; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+h2 { display: flex; flex-direction: column; }
+p, li { max-width: 78ch; }
+.lead { color: var(--body); font-size: 1.125rem; line-height: 1.6; max-width: 60ch; }
+ul, ol { padding-left: 1.3em; }
+
+.callout { border: 1px solid var(--border); border-left: 3px solid var(--note); background: var(--note-bg); padding: 12px 18px; border-radius: 8px; margin: 20px 0; max-width: 78ch; }
+.callout.caution { border-left-color: var(--caution); background: var(--caution-bg); }
+.callout.tip { border-left-color: var(--tip); background: var(--tip-bg); }
+.callout > :first-child { margin-top: 0; } .callout > :last-child { margin-bottom: 0; }
+.callout strong.t { display: block; margin-bottom: 2px; font: 400 12px/16px "Geist Mono", ui-monospace, monospace; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text); }
+
+.table-wrap { overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--surface-2); font: 400 12px/16px "Geist Mono", ui-monospace, monospace; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+.m { font: 400 12px/16px "Geist Mono", ui-monospace, monospace; letter-spacing: 1.2px; padding: 3px 10px; border-radius: 9999px; border: 1px solid var(--pill-border); white-space: nowrap; color: var(--text); }
+.m.GET { color: var(--note); } .m.POST { color: var(--tok-kw); } .m.PATCH { color: var(--caution); }
+
+.code { margin: 16px 0; border: 1px solid var(--border); border-radius: 8px; background: var(--code-bg); overflow: hidden; }
+.code .bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px 6px 16px; font: 400 12px/16px "Geist Mono", ui-monospace, monospace; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--surface); }
+.code button.copy { border: 1px solid var(--pill-border); background: transparent; color: var(--text); font: 400 12px/16px "Geist", "Inter", sans-serif; padding: 3px 12px; border-radius: 9999px; cursor: pointer; }
+.code button.copy:hover { background: var(--accent-soft); }
+.code pre { margin: 0; padding: 16px 20px; overflow-x: auto; color: var(--code-text); font-size: 13px; line-height: 1.65; tab-size: 4; }
+.k { color: var(--tok-kw); } .s { color: var(--tok-str); } .c { color: var(--tok-com); } .n { color: var(--tok-num); } .f { color: var(--tok-fn); } .p { color: var(--tok-key); }
+
+.steps { counter-reset: s; list-style: none; padding: 0; }
+.steps > li { counter-increment: s; position: relative; padding: 2px 0 12px 44px; }
+.steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 9999px; border: 1px solid var(--pill-border); color: var(--text); display: grid; place-items: center; font: 400 13px "Geist Mono", ui-monospace, monospace; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin: 32px 0 48px; }
+.card { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 24px; display: block; color: var(--text); text-decoration: none; }
+.card:hover { border-color: var(--pill-border); }
+.card b { display: block; margin-bottom: 6px; font-size: 1.25rem; letter-spacing: -0.01em; } .card span { color: var(--muted); font-size: .88rem; }
+.src { margin-top: 24px; font: 400 12px/18px "Geist Mono", ui-monospace, monospace; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); max-width: none; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  #menu-btn { display: inline-block; }
+  nav.side { position: fixed; z-index: 40; top: 58px; left: 0; width: min(86vw, 320px); background: var(--bg); transform: translateX(-102%); transition: transform .2s; height: calc(100vh - 58px); }
+  body.nav-open nav.side { transform: none; }
+  header.top .brand small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } nav.side { transition: none; } }
+@media print { header.top, nav.side { display: none; } .layout { display: block; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <button id="menu-btn" aria-label="開啟目錄">☰</button>
+  <div class="brand">Duffel Flights API<small>Python 使用指南</small></div>
+  <div class="spacer"></div>
+  <div class="theme-switch" role="group" aria-label="配色模式">
+    <button data-set="system" aria-pressed="true">系統</button>
+    <button data-set="light" aria-pressed="false">亮色</button>
+    <button data-set="dark" aria-pressed="false">暗色</button>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="side" id="side">
+  <input id="nav-filter" type="search" placeholder="篩選章節…" aria-label="篩選章節">
+  <h4>開始</h4>
+  <a href="#setup">環境與共用 helper</a>
+  <a href="#endpoints">端點總覽</a>
+  <a href="#quickstart">快速開始：搜尋→訂位</a>
+  <h4>搜尋（Search）</h4>
+  <a href="#search-practices">搜尋最佳實務</a>
+  <a href="#response-format">回應格式選擇</a>
+  <a href="#split-ticket">分開購票行程</a>
+  <a href="#private-fares">私有票價（總覽）</a>
+  <a href="#leisure-fares">休閒私有票價</a>
+  <a href="#corporate-fares">企業協議票價</a>
+  <a href="#loyalty">忠誠計畫帳號</a>
+  <a href="#corporate-loyalty">企業忠誠計畫</a>
+  <a href="#stops">顯示經停</a>
+  <a href="#conditions">顯示改票／退票條件</a>
+  <a href="#airports">依區域找機場</a>
+  <h4>訂位與加購</h4>
+  <a href="#hold">保留訂位、稍後付款</a>
+  <a href="#bags">加購行李</a>
+  <a href="#seats">選位</a>
+  <a href="#accurate-price">取得準確價格</a>
+  <h4>訂位後</h4>
+  <a href="#cancel">取消訂單</a>
+  <a href="#change">更改訂單</a>
+  <a href="#post-bags">訂位後加購行李</a>
+  <h4>附錄</h4>
+  <a href="#full-script">完整流程腳本</a>
+  <a href="#errors">錯誤處理與檢查表</a>
+</nav>
+
+<main>
+<h1>Duffel Flights API 使用指南</h1>
+<p class="lead">整理自 Duffel 官方 18 篇 Flights 指南：搜尋、訂位、加購、訂位後管理。所有呼叫範例皆使用 Python 的 <code>requests</code>。</p>
+
+<div class="cards">
+  <a class="card" href="#quickstart"><b>① 搜尋 → 訂位</b><span>offer request → offer → order</span></a>
+  <a class="card" href="#seats"><b>② 加購</b><span>行李、選位、準確價格、保留訂位</span></a>
+  <a class="card" href="#cancel"><b>③ 訂位後</b><span>取消、改票、補買行李</span></a>
+</div>
+
+<!-- ============ SETUP ============ -->
+<section class="guide" id="setup">
+<h2>環境與共用 helper</h2>
+<ol class="steps">
+  <li><a href="https://app.duffel.com/join" target="_blank" rel="noopener">註冊 Duffel 帳號</a>（約 1 分鐘）。</li>
+  <li>在 Dashboard 導覽列點 <b>More → Developers</b>，到 <b>Access tokens</b> 建立<b>測試用</b> access token。</li>
+  <li>把 token 放進環境變數，不要寫死在程式碼或提交到版本控制。</li>
+</ol>
+<div class="code"><div class="bar"><span>shell</span><button class="copy">複製</button></div><pre data-lang="bash"># 安裝
+pip install requests
+
+# 設定 token（請換成你自己的）
+export DUFFEL_ACCESS_TOKEN="你的測試 token"</pre></div>
+
+<p>每個請求都需要這幾個標頭：<code>Authorization: Bearer …</code>、<code>Duffel-Version: v2</code>、<code>Accept: application/json</code>，有 body 時再加 <code>Content-Type: application/json</code>。請求的 body 一律包在 <code>{"data": …}</code> 裡，回應內容也在 <code>data</code> 裡。下面這個 helper 會處理這些事，後面所有範例都假設你已經定義了它。</p>
+
+<div class="code"><div class="bar"><span>duffel_client.py</span><button class="copy">複製</button></div><pre data-lang="python">import os
+import requests
+
+BASE_URL = "https://api.duffel.com"
+HEADERS = {
+    "Accept": "application/json",
+    "Content-Type": "application/json",
+    "Duffel-Version": "v2",
+    "Authorization": f"Bearer {os.environ['DUFFEL_ACCESS_TOKEN']}",
+}
+
+
+class DuffelError(Exception):
+    """API 回傳非 2xx 時拋出，帶有狀態碼與 errors 內容。"""
+
+    def __init__(self, status, errors):
+        super().__init__(f"HTTP {status}: {errors}")
+        self.status = status
+        self.errors = errors
+
+
+def duffel(method, path, *, params=None, data=None):
+    """呼叫 Duffel API，回傳回應中的 `data`。"""
+    resp = requests.request(
+        method,
+        BASE_URL + path,
+        headers=HEADERS,
+        params=params,
+        json={"data": data} if data is not None else None,
+        timeout=60,
+    )
+    body = resp.json() if resp.content else {}
+    if not resp.ok:
+        raise DuffelError(resp.status_code, body.get("errors", body))
+    return body.get("data")</pre></div>
+
+<div class="callout tip"><strong class="t">提示</strong>範例中的 <code>requests</code> 會自動處理 gzip，不需要手動加 <code>Accept-Encoding</code>。若想一併使用 Duffel 官方 JavaScript 客戶端，可參考官方文件；本頁僅示範 Python 直接呼叫 REST。</div>
+<p class="src">來源：Getting Started with Flights</p>
+</section>
+
+<!-- ============ ENDPOINTS ============ -->
+<section class="guide" id="endpoints">
+<h2>端點總覽</h2>
+<p>下表彙整這 18 篇指南用到的所有端點。「本頁章節」可直接跳到對應用法。</p>
+<div class="table-wrap"><table>
+<thead><tr><th>方法</th><th>路徑</th><th>用途</th><th>本頁章節</th></tr></thead>
+<tbody>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/offer_requests</code></td><td>建立搜尋（可帶 <code>return_offers</code>、<code>supplier_timeout</code>、<code>view</code> 查詢參數）</td><td><a href="#quickstart">快速開始</a>、<a href="#search-practices">最佳實務</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/offer_requests/:id</code></td><td>取回既有搜尋（支援 <code>view</code>）</td><td><a href="#response-format">回應格式</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/batch_offer_requests</code></td><td>串流式分批取得 offers（先到先顯示）</td><td><a href="#quickstart">快速開始</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/batch_offer_requests/:id</code></td><td>取回批次搜尋（支援 <code>view</code>）</td><td><a href="#response-format">回應格式</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/offers/:id</code></td><td>取得最新 offer（可帶 <code>return_available_services=true</code>）</td><td><a href="#quickstart">快速開始</a>、<a href="#bags">行李</a></td></tr>
+<tr><td><span class="m PATCH">PATCH</span></td><td><code>/air/offers/:offer_id/passengers/:offer_passenger_id</code></td><td>更新 offer 乘客（加入忠誠計畫帳號）</td><td><a href="#loyalty">忠誠計畫</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/offers/:id/actions/price</code></td><td>以預定付款方式／加購服務為 offer 重新計價</td><td><a href="#accurate-price">準確價格</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/seat_maps?offer_id=</code></td><td>取得 offer 的座位圖</td><td><a href="#seats">選位</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/orders</code></td><td>建立訂單（<code>instant</code> 或 <code>hold</code>）</td><td><a href="#quickstart">快速開始</a>、<a href="#hold">保留訂位</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/orders/:id</code></td><td>取得訂單（含 <code>services</code>、<code>payment_status</code>、<code>available_actions</code>）</td><td><a href="#bags">行李</a>、<a href="#hold">保留訂位</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/orders/:id/actions/price</code></td><td>為 hold 訂單以付款方式計價</td><td><a href="#accurate-price">準確價格</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/payments</code></td><td>支付 hold 訂單</td><td><a href="#hold">保留訂位</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/orders/:id/available_services</code></td><td>列出既有訂單可加購的服務</td><td><a href="#post-bags">訂位後行李</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/orders/:id/services</code></td><td>為既有訂單加購服務</td><td><a href="#post-bags">訂位後行李</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/order_cancellations</code></td><td>建立取消報價（尚未生效）</td><td><a href="#cancel">取消</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/order_cancellations/:id/actions/confirm</code></td><td>確認取消</td><td><a href="#cancel">取消</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/order_change_requests</code></td><td>建立改票請求（要移除／新增的航段）</td><td><a href="#change">改票</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/order_change_requests/:id</code></td><td>取得改票請求與 <code>order_change_offers</code></td><td><a href="#change">改票</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/order_changes</code></td><td>建立待確認的訂單變更</td><td><a href="#change">改票</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/air/order_changes/:id</code></td><td>取得最新的變更價格</td><td><a href="#change">改票</a></td></tr>
+<tr><td><span class="m POST">POST</span></td><td><code>/air/order_changes/:id/actions/confirm</code></td><td>付款並確認變更</td><td><a href="#change">改票</a></td></tr>
+<tr><td><span class="m GET">GET</span></td><td><code>/places/suggestions</code></td><td>依經緯度與半徑建議地點／機場</td><td><a href="#airports">找機場</a></td></tr>
+</tbody></table></div>
+<div class="callout"><strong class="t">備註</strong>指南中另外只以連結引用、未展開用法的功能：Partial Offer Request（多步驟搜尋）、Paying with customer cards（客戶信用卡付款）、Ancillaries component（加購 UI 元件）。</div>
+</section>
+
+<!-- ============ QUICKSTART ============ -->
+<section class="guide" id="quickstart">
+<h2>快速開始：搜尋 → 訂位 <span class="tag">Getting Started</span></h2>
+<p>情境：Tony、Pepper 與女兒 Morgan（1 歲）要從紐約飛亞特蘭大，6/11 出發、6/18 回程，想坐商務艙。流程分三步：</p>
+<ol class="steps">
+  <li><b>搜尋航班</b>：建立 offer request，取得 offers。</li>
+  <li><b>選擇 offer</b>：重新取得最新版 offer（offer 很快就會過期）。</li>
+  <li><b>建立訂單</b>：帶上 offer ID、乘客資料、付款。</li>
+</ol>
+
+<h3>1. 搜尋航班</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer_request = duffel(
+    "POST",
+    "/air/offer_requests",
+    params={"return_offers": "true"},
+    data={
+        "slices": [
+            {"origin": "NYC", "destination": "ATL", "departure_date": "2026-06-11"},
+            {"origin": "ATL", "destination": "NYC", "departure_date": "2026-06-18"},
+        ],
+        # 18 歲以下必須提供 age；成人只需 type
+        "passengers": [{"type": "adult"}, {"type": "adult"}, {"age": 1}],
+        "cabin_class": "business",
+    },
+)
+
+offers = offer_request["offers"]
+passenger_ids = [p["id"] for p in offer_request["passengers"]]  # 訂位時要用</pre></div>
+
+<ul>
+  <li><b>slice</b>：一段「出發地→目的地＋日期」的旅程。地點可用機場 IATA 碼（<code>ATL</code>）或城市碼（<code>NYC</code>，涵蓋多個機場）。</li>
+  <li><b>乘客</b>：成人用 <code>{"type": "adult"}</code>；未滿 18 歲請給 <code>age</code>，因為航空公司依年齡定價。</li>
+  <li>回應會回傳 offer request 的 <code>id</code>（之後可再 <a href="https://duffel.com/docs/api/v2/offer-requests/get-offer-request-by-id" target="_blank" rel="noopener">取回</a>）、<code>offers</code>，以及每位乘客自動產生的 <code>id</code>。</li>
+</ul>
+<p>取得 offers 有兩種方式：</p>
+<ol>
+  <li><b>一次回傳全部</b>（上面的做法）：適合應用程式先處理過資料再顯示。</li>
+  <li><b>串流分批</b>（<code>POST /air/batch_offer_requests</code>）：適合想「一有結果就先顯示」的畫面。</li>
+</ol>
+
+<h3>2. 選擇 offer：取得最新版</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer = duffel("GET", f"/air/offers/{offer_id}")
+
+total_amount = offer["total_amount"]      # 例如 "7477.00"
+total_currency = offer["total_currency"]  # 例如 "GBP"</pre></div>
+<p>請在使用者選好 offer、<b>還沒要他填完整乘客資料與付款之前</b>做這件事，價格才是最新的。每個 offer 內含 <code>slices</code>，每個 slice 又含一個或多個 <code>segments</code>（實際航班，含航空公司、班號、行李額度）。例如 JFK→IAD→ATL 的去程就有 2 個 segment；直飛的回程只有 1 個。</p>
+
+<h3>3. 建立訂單</h3>
+<p>你需要：offer ID、乘客資料、付款資訊。請先自行向客戶收款，再建立訂單。付款 <code>type</code> 有兩種：</p>
+<ul>
+  <li><code>arc_bsp_cash</code>：你是 IATA 註冊旅行社，使用自己與航空公司的關係。</li>
+  <li><code>balance</code>：使用 Duffel 託管內容（Managed Content），從 Duffel 餘額扣款。若想直接向客戶刷卡，見官方「Paying with customer cards」指南。</li>
+</ul>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">adult_1, adult_2, infant = passenger_ids
+
+order = duffel(
+    "POST",
+    "/air/orders",
+    data={
+        "selected_offers": [offer["id"]],          # 目前只能放 1 個 offer
+        "payments": [                              # 目前只支援 1 筆付款
+            {
+                "type": "balance",
+                "currency": total_currency,        # ISO 4217，須與 offer 的 total_currency 相同
+                "amount": total_amount,            # 須與 offer 的 total_amount 相同
+            }
+        ],
+        "passengers": [
+            {
+                "id": adult_1,
+                "title": "mr", "gender": "m",
+                "given_name": "Tony", "family_name": "Stark",
+                "born_on": "1980-07-24",
+                "email": "tony@example.com", "phone_number": "+442080160508",
+                "infant_passenger_id": infant,     # 嬰兒（0–1 歲）要指定負責的成人
+            },
+            {
+                "id": adult_2,
+                "title": "mrs", "gender": "f",
+                "given_name": "Pepper", "family_name": "Potts",
+                "born_on": "1983-11-02",
+                "email": "potts@example.com", "phone_number": "+442080160509",
+            },
+            {
+                "id": infant,
+                "title": "mrs", "gender": "f",
+                "given_name": "Morgan", "family_name": "Stark",
+                "born_on": "2019-08-24",
+                "email": "morgan@example.com", "phone_number": "+442080160506",
+            },
+        ],
+    },
+)
+
+print(order["id"], order["booking_reference"])  # 航空公司訂位代號</pre></div>
+<div class="callout caution"><strong class="t">注意</strong><ul>
+<li>乘客的 <code>id</code> 要用搜尋結果裡該乘客的 ID。</li>
+<li>務必填<b>乘客本人</b>的 email，且報到應由乘客本人完成。</li>
+<li>每位嬰兒都必須指派一位「唯一」的負責成人（<code>infant_passenger_id</code>，不可重複）。</li>
+<li>訂位流程與訂位後，必須顯示 Duffel 規定的<a href="https://help.duffel.com/hc/en-gb/articles/360021056640" target="_blank" rel="noopener">法律告知</a>，讓客戶了解資料用途與適用規則。</li>
+</ul></div>
+<p class="src">來源：Getting Started with Flights</p>
+</section>
+
+<!-- ============ SEARCH PRACTICES ============ -->
+<section class="guide" id="search-practices">
+<h2>搜尋最佳實務 <span class="tag">Search</span></h2>
+<p>熱門航線的 offers 可高達數萬筆（例如 JFK↔MAD：30 個去程 × 20 個回程 = 600 種組合，每種再有 5 個票價品牌可混搭，共約 15,000 筆）。善用過濾條件可以縮小 payload 並加快速度。官方建議盡量使用這些條件，必要時設為預設值。</p>
+
+<h3>過濾條件（放在 request body）</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>欄位</th><th>效果</th><th>建議</th></tr></thead>
+<tbody>
+<tr><td><code>cabin_class</code></td><td>艙等會直接傳給各航空公司，結果更相關也更快。</td><td>讓使用者選艙等時一定要帶。</td></tr>
+<tr><td><code>max_connections</code></td><td>只回傳轉機次數不超過此值的 offers。</td><td>設 0 或 1 在相關性與速度間最平衡；2 會有更多選項。未指定時 Duffel 預設最多 1 次轉機。</td></tr>
+<tr><td><code>departure_time</code> / <code>arrival_time</code>（放在 slice 內）</td><td>限制起飛／抵達的時段（<code>from</code>、<code>to</code>，格式 <code>HH:MM</code>）。</td><td>使用者已知要搭哪班時，這是最快的搜尋方式。</td></tr>
+</tbody></table></div>
+
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer_request = duffel(
+    "POST",
+    "/air/offer_requests",
+    params={"return_offers": "true", "supplier_timeout": 10000},  # 毫秒
+    data={
+        "slices": [
+            {
+                "origin": "MAD",
+                "destination": "JFK",
+                "departure_date": "2026-12-05",
+                "departure_time": {"from": "08:00", "to": "11:00"},
+                "arrival_time": {"from": "09:45", "to": "17:00"},
+            },
+            {"origin": "JFK", "destination": "MAD", "departure_date": "2026-12-10"},
+        ],
+        "passengers": [{"type": "adult"}],
+        "cabin_class": "first",
+        "max_connections": 0,
+    },
+)</pre></div>
+
+<h3>查詢參數：<code>supplier_timeout</code></h3>
+<p>控制「使用者要等多久」。數值小 → 偏重速度、結果較少；數值大 → 選項較多。未指定時預設 <b>20 秒</b>（官方也建議用這個值）。上面範例用 <code>10000</code>（毫秒）。</p>
+<p class="src">來源：Following Search Best Practices。延伸閱讀：Duffel 部落格「Designing the Modern Flight Booking Experience」、「Why Your Customers Will Thank You For NDC」。</p>
+</section>
+
+<!-- ============ RESPONSE FORMAT ============ -->
+<section class="guide" id="response-format">
+<h2>回應格式選擇 <span class="tag">Search</span></h2>
+<p>搜尋時用查詢參數 <code>view</code> 決定 offers 的結構：</p>
+<div class="table-wrap"><table>
+<thead><tr><th>值</th><th>結構</th><th>適用</th></tr></thead>
+<tbody>
+<tr><td><code>offers</code>（預設）</td><td>扁平的 <code>offers</code> 陣列，每筆都內嵌完整的 slice／segment／航空公司／機場資料。</td><td>把每個 offer 當作獨立單位、不需依行程分組的整合。</td></tr>
+<tr><td><code>itineraries</code></td><td><code>slices[] → itineraries[] → brands[] → offers[]</code>；航空公司、地點、機型抽到頂層 <code>references</code> 對照表。</td><td>想依行程＋票價品牌分組顯示、想要更小的 payload、或要提供<a href="#split-ticket">分開購票</a>。</td></tr>
+</tbody></table></div>
+<p>三個端點都支援 <code>view</code>：<code>POST /air/offer_requests</code>、<code>GET /air/offer_requests/:id</code>、<code>GET /air/batch_offer_requests/:id</code>。省略時預設為 <code>offers</code>，既有整合不受影響。<code>Accept</code> 標頭仍只決定傳輸編碼，<code>view</code> 只影響 JSON 內部結構。</p>
+
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">result = duffel(
+    "POST",
+    "/air/offer_requests",
+    params={"view": "itineraries"},
+    data={
+        "cabin_class": "economy",
+        "passengers": [{"type": "adult"}],
+        "slices": [
+            {"origin": "NYC", "destination": "LON", "departure_date": "2026-12-15"},
+            {"origin": "LON", "destination": "NYC", "departure_date": "2026-12-20"},
+        ],
+    },
+)
+
+airlines = result["references"]["airlines"]  # 以 ID 查表
+for slice_ in result["slices"]:
+    for itinerary in slice_["itineraries"]:
+        for brand in itinerary["brands"]:
+            for offer in brand["offers"]:
+                owner = airlines[offer["owner"]]["name"]
+                print(owner, brand["fare_brand_name"],
+                      offer["total_amount"], offer["total_currency"], offer["type"])</pre></div>
+
+<h3><code>itineraries</code> 結構範例</h3>
+<div class="code"><div class="bar"><span>json</span><button class="copy">複製</button></div><pre data-lang="json">{
+  "data": {
+    "id": "orq_00009hthhsUZ8W4LxQghdf",
+    "references": {
+      "airlines": { "arl_00009VME7D6ivUu8dn35WK": { "name": "Duffel Airways", "iata_code": "ZZ" } },
+      "places":   { "arp_jfk_us": { "iata_code": "JFK", "type": "airport" } },
+      "aircraft": { "arc_00009VMF8AhXSSRnQDI6HE": { "name": "Airbus A380", "iata_code": "380" } }
+    },
+    "slices": [{
+      "origin": "arp_jfk_us",
+      "destination": "arp_lhr_gb",
+      "itineraries": [{
+        "segments": [ /* 共用的航段 */ ],
+        "brands": [{
+          "fare_brand_name": "Economy Basic",
+          "offers": [{
+            "id": "off_00009htYpSCXrwaB9Dn456",
+            "type": "single_ticket",
+            "owner": "arl_00009VME7D6ivUu8dn35WK",
+            "total_amount": "470.00",
+            "total_currency": "GBP"
+          }]
+        }]
+      }]
+    }]
+  }
+}</pre></div>
+<ul>
+  <li><code>itineraries[]</code>：航班、順序、艙等完全相同的 offers。</li>
+  <li><code>brands[]</code>：該行程可選的票價品牌（艙等、行李、改退票條件）。</li>
+  <li><code>offer.type</code>：<code>single_ticket</code>（單一航空公司涵蓋所有 slice）或 <code>split_ticket</code>（見下一章）。未啟用分開購票時一律是 <code>single_ticket</code>。</li>
+</ul>
+<p class="src">來源：Choosing your search response format</p>
+</section>
+
+<!-- ============ SPLIT TICKET ============ -->
+<section class="guide" id="split-ticket">
+<h2>分開購票行程 <span class="tag">Search</span></h2>
+<p>分開購票（split-ticket）是把多段行程拆成<b>各自獨立的單程 offer</b>（常來自不同航空公司）來組合，選擇更多、有時更便宜。</p>
+<div class="callout caution"><strong class="t">需要先開通</strong>此功能需聯絡 Duffel 支援（<a href="mailto:help@duffel.com">help@duffel.com</a>）開啟；且只會出現在 <code>view=itineraries</code> 的回應中，不會出現在預設的扁平 <code>offers</code> 回應。</div>
+
+<h3>請求</h3>
+<ol>
+  <li>body 設 <code>include_split_ticket: true</code>。</li>
+  <li>查詢參數加上 <code>view=itineraries</code>。</li>
+</ol>
+<p><code>include_split_ticket</code> 對單程（單一 slice）搜尋無效。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">result = duffel(
+    "POST",
+    "/air/offer_requests",
+    params={"view": "itineraries"},
+    data={
+        "include_split_ticket": True,
+        "cabin_class": "economy",
+        "passengers": [{"type": "adult"}],
+        "slices": [
+            {"origin": "NYC", "destination": "LON", "departure_date": "2026-12-15"},
+            {"origin": "LON", "destination": "NYC", "departure_date": "2026-12-20"},
+        ],
+    },
+)</pre></div>
+
+<h3>回應與組合</h3>
+<ul>
+  <li><code>type: "single_ticket"</code>：一家航空公司涵蓋全部 slice，照一般方式訂。</li>
+  <li><code>type: "split_ticket"</code>：單一 slice 的單程 offer，每個 slice 各自回傳。</li>
+</ul>
+<p>組合方式：<b>每個 slice 各挑一個 <code>split_ticket</code> offer</b>。<code>single_ticket</code> 自己就涵蓋整趟行程，兩者擇一，不可混用。</p>
+
+<h3>計價與訂位：一個 offer 一張訂單</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">chosen = ["off_B", "off_C"]  # 客人在 slice 0 與 slice 1 各選的 split_ticket offer
+
+# 1) 各自取得最新價格
+latest = [duffel("GET", f"/air/offers/{oid}") for oid in chosen]
+
+# 2) 各自建立訂單；要自己處理「部分成功」
+results = []
+for offer in latest:
+    try:
+        order = duffel("POST", "/air/orders", data={
+            "selected_offers": [offer["id"]],
+            "payments": [{"type": "balance",
+                          "currency": offer["total_currency"],
+                          "amount": offer["total_amount"]}],
+            "passengers": passengers,   # 該 offer 對應的乘客資料
+        })
+        results.append(("ok", order["id"]))
+    except DuffelError as e:
+        results.append(("failed", str(e)))
+
+print(results)  # 例如 [("ok", "ord_001"), ("failed", "...")]</pre></div>
+<div class="callout caution"><strong class="t">需留意</strong><ul>
+<li><b>一個 slice 一張訂單</b>：各有自己的 PNR／訂位代號，改票、退票、規則各自獨立；一邊的班表異動不會連動另一邊。</li>
+<li><b>必須處理部分成功</b>：多張訂單可能只有一部分成功。</li>
+<li><b>分開付款</b>：客人信用卡會有兩筆扣款（或你的餘額扣兩次），容易造成困惑。</li>
+</ul></div>
+<p class="src">來源：Selling split-ticket itineraries</p>
+</section>
+
+<!-- ============ PRIVATE FARES ============ -->
+<section class="guide" id="private-fares">
+<h2>私有票價（總覽） <span class="tag">Search</span></h2>
+<p>私有票價是航空公司與代理商簽訂的特別折扣或特殊條件（例如不同的改票規則）。如果你已向航空公司備案票價，就能在搜尋時請求。有兩種：</p>
+<ul>
+  <li><b><a href="#corporate-fares">企業協議票價</a></b>：在 <code>private_fares</code> 物件放 <code>corporate_code</code>、<code>tour_code</code> 等識別碼。</li>
+  <li><b><a href="#leisure-fares">休閒私有票價</a></b>：在每位乘客上設 <code>fare_type</code>（如學生、旅行團營運商票價）。可與企業協議票價在同一次搜尋中一起請求。</li>
+</ul>
+<p class="src">來源：Accessing Private Fares</p>
+</section>
+
+<section class="guide" id="leisure-fares">
+<h2>休閒私有票價 <span class="tag">Search</span></h2>
+<p>針對非企業情境（學生、旅行團營運商等）。對每位適用的乘客加上 <code>fare_type</code>；部分涉及兒童／嬰兒的類型還可再帶 <code>age</code>。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer_request = duffel("POST", "/air/offer_requests", data={
+    "passengers": [
+        {"fare_type": "student"},
+        {"fare_type": "contract_bulk_child", "age": 5},
+    ],
+    "slices": [
+        {"origin": "LHR", "destination": "JFK", "departure_date": "2026-12-24"},
+        {"origin": "JFK", "destination": "LHR", "departure_date": "2026-12-30"},
+    ],
+})
+
+for offer in offer_request["offers"]:
+    if offer.get("private_fares"):          # 空陣列 = 沒套用私有票價
+        print(offer["id"], offer["private_fares"])   # [{"type": "leisure"}]</pre></div>
+<div class="callout caution"><strong class="t">注意</strong>各航空公司支援的 <code>fare_type</code> 子集合不同，你必須清楚自己向航空公司備案了哪些類型。傳入該航空公司不支援的 <code>fare_type</code>，會導致該航空公司<b>沒有私有票價，甚至完全沒有 offers</b>。若你已備案但 Duffel 尚未開放的類型，請聯絡 Duffel。</div>
+<p>後續建立訂單的步驟與一般流程相同。</p>
+<p class="src">來源：Accessing Leisure Private Fares</p>
+</section>
+
+<section class="guide" id="corporate-fares">
+<h2>企業協議票價 <span class="tag">Search</span></h2>
+<p>航空公司直接與大型企業客戶簽訂的折扣票價，通常有更低價格、更彈性的條件。</p>
+<div class="callout"><strong class="t">前提</strong>必須有企業客戶與航空公司的直接合約（已完成航空公司 RFP 並有有效票價協議）。航空公司會在協議成立後提供所需代碼（如 <code>corporate_code</code>、<code>tour_code</code>）。</div>
+<div class="callout caution"><strong class="t">每筆訂位都要帶</strong>凡是在企業票價協議下訂的位，都必須傳入正確的 corporate code 與 tour code。</div>
+
+<h3>部分支援的航空公司</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>航空公司</th><th>IATA</th><th>必要參數</th></tr></thead>
+<tbody>
+<tr><td>American Airlines</td><td>AA</td><td><code>corporate_code</code>、<code>tour_code</code></td></tr>
+<tr><td>United Airlines</td><td>UA</td><td><code>corporate_code</code>、<code>tour_code</code></td></tr>
+<tr><td>Southwest Airlines</td><td>WN</td><td><code>corporate_code</code>、<code>tour_code</code></td></tr>
+<tr><td>Transavia Netherlands</td><td>HV</td><td><code>corporate_code</code>（Transavia 提供的 OIN）</td></tr>
+<tr><td>Transavia France</td><td>TO</td><td><code>corporate_code</code></td></tr>
+</tbody></table></div>
+<p>這不是完整清單；缺少你需要的航空公司，請聯絡 Duffel，可能已經支援。</p>
+
+<h3>搜尋時帶入（key 為航空公司 IATA 碼，可同時帶多家）</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer_request = duffel("POST", "/air/offer_requests", data={
+    "slices": [
+        {"origin": "JFK", "destination": "LAX", "departure_date": "2026-09-15"},
+        {"origin": "LAX", "destination": "JFK", "departure_date": "2026-09-22"},
+    ],
+    "passengers": [{"type": "adult"}],
+    "private_fares": {
+        "AA": [{"corporate_code": "AACORP123", "tour_code": "CODE12"}],
+        "UA": [{"corporate_code": "UACORP123", "tour_code": "CODE12"}],
+        "HV": [{"corporate_code": "OIN123"}],   # Transavia 只需 corporate_code
+    },
+})</pre></div>
+
+<h3>檢查 offer 是否套用了企業票價</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">for offer in offer_request["offers"]:
+    corporate = [pf for pf in offer["private_fares"] if pf["type"] == "corporate"]
+    if corporate:
+        print(offer["id"], corporate)
+        # [{"corporate_code": "BNC01", "tour_code": "99647881", "type": "corporate"}]
+    # private_fares 為空陣列 → 這筆 offer 沒有套用企業票價</pre></div>
+<div class="callout caution"><strong class="t">注意</strong>航空公司不一定在搜尋時驗證代碼。<b>你要自行確保 <code>corporate_code</code>、<code>tour_code</code> 正確</b>，填錯可能導致 offers 照常回傳，但沒有套用協議價。</div>
+<p class="src">來源：Accessing Corporate Private Fares</p>
+</section>
+
+<!-- ============ LOYALTY ============ -->
+<section class="guide" id="loyalty">
+<h2>忠誠計畫帳號 <span class="tag">Search</span></h2>
+<p>旅客的忠誠計畫帳號可累積里程，並享有折扣票價、免費行李、選位等優惠。把帳號送給航空公司後，這些優惠會反映在 offer 上（offer schema 包含已送出的乘客忠誠計畫帳號）。每位乘客可提供任意多個不同的帳號，Duffel 會轉送到對應的航空公司。</p>
+
+<h3>流程 A：建立 Offer Request 時帶入</h3>
+<p>與一般搜尋的差別只在乘客資料：除了 <code>loyalty_programme_accounts</code>，航空公司也需要旅客姓名。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer_request = duffel("POST", "/air/offer_requests", data={
+    "slices": [{"origin": "LHR", "destination": "JFK", "departure_date": "2026-04-24"}],
+    "passengers": [
+        {
+            "type": "adult",
+            "given_name": "Amelia",
+            "family_name": "Earhart",
+            "loyalty_programme_accounts": [
+                {"airline_iata_code": "QF", "account_number": "12901014"}
+            ],
+        },
+        {"age": 14},
+    ],
+    "cabin_class": "economy",
+})</pre></div>
+
+<h3>流程 B：更新 Offer 的乘客</h3>
+<p>已經有不含忠誠帳號的 offer 時，用此端點補上。<b>只有這個流程</b>才看得到票價折扣。每位乘客要各自更新（帳號不會在乘客之間共用）。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">duffel(
+    "PATCH",
+    f"/air/offers/{offer_id}/passengers/{offer_passenger_id}",
+    data={
+        "given_name": "Amelia",
+        "family_name": "Earhart",
+        "loyalty_programme_accounts": [
+            {"airline_iata_code": "QF", "account_number": "12901014"}
+        ],
+    },
+)
+
+# 價格可能因此改變，必須重新取得 offer
+offer = duffel("GET", f"/air/offers/{offer_id}")</pre></div>
+<p>建立訂單時<b>不需要</b>再提供忠誠計畫資料。</p>
+
+<h3>測試</h3>
+<p>可用 Duffel Airways（IATA <code>ZZ</code>）測試：下列乘客資料會得到 <b>10% 折扣</b>、每位乘客 <b>6 件託運行李</b>，以及座位服務 10% 折扣。其他航空公司的測試資料請洽 <a href="mailto:help@duffel.com">help@duffel.com</a>。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">test_passenger = {
+    "type": "adult",
+    "given_name": "Amelia",
+    "family_name": "Earhart",
+    "loyalty_programme_accounts": [
+        {"airline_iata_code": "ZZ", "account_number": "1234567890"}
+    ],
+}</pre></div>
+<p class="src">來源：Adding Loyalty Programme Accounts</p>
+</section>
+
+<section class="guide" id="corporate-loyalty">
+<h2>企業忠誠計畫 <span class="tag">Search</span></h2>
+<p>企業忠誠計畫讓公司在員工出差時累積獎勵。與<a href="#corporate-fares">企業協議票價</a>一樣透過 <code>private_fares</code> 物件，但各航空公司要求的參數不同。</p>
+<div class="table-wrap"><table>
+<thead><tr><th>航空公司</th><th>計畫名稱</th><th>必要參數</th></tr></thead>
+<tbody>
+<tr><td>United (UA)</td><td>PerksPlus</td><td><code>tour_code</code></td></tr>
+<tr><td>American (AA)</td><td>AAdvantage Business</td><td><code>tracking_reference</code></td></tr>
+<tr><td>Air France (AF)</td><td>Bluebiz</td><td><code>tracking_reference</code></td></tr>
+<tr><td>KLM (KL)</td><td>Bluebiz</td><td><code>tracking_reference</code></td></tr>
+<tr><td>Delta (DL)</td><td>SkyMiles for Business</td><td><code>tracking_reference</code></td></tr>
+<tr><td>Southwest (WN)</td><td>SWABIZ、Rapid Rewards BIZ</td><td><code>tracking_reference</code></td></tr>
+<tr><td>Frontier (F9)</td><td>Biz travel for less</td><td><code>tracking_reference</code></td></tr>
+<tr><td>Alaska (AS)</td><td>EasyBiz</td><td><code>tracking_reference</code></td></tr>
+<tr><td>WestJet (WS)</td><td>WestJetBiz</td><td><code>tracking_reference</code></td></tr>
+<tr><td>JetBlue (B6)</td><td>JetBlue Business Travel</td><td><code>tracking_reference</code></td></tr>
+</tbody></table></div>
+<p>非完整清單，缺少主要航空公司請聯絡 Duffel。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python"># United PerksPlus：tour_code
+duffel("POST", "/air/offer_requests", data={
+    "slices": [{"origin": "SFO", "destination": "LAX", "departure_date": "2026-07-15"}],
+    "passengers": [{"type": "adult"}],
+    "private_fares": {"UA": [{"tour_code": "CORP123"}]},
+})
+
+# American AAdvantage Business：tracking_reference
+duffel("POST", "/air/offer_requests", data={
+    "slices": [{"origin": "JFK", "destination": "ORD", "departure_date": "2026-07-15"}],
+    "passengers": [{"type": "adult"}],
+    "private_fares": {"AA": [{"tracking_reference": "AA12345"}]},
+})</pre></div>
+<p>收到 offers 後，檢查每筆 offer 的 <code>private_fares</code> 屬性，確認套用了哪些企業忠誠計畫。</p>
+<div class="callout caution"><strong class="t">注意</strong>供應商通常不會在搜尋或建單時驗證忠誠計畫資料是否正確。務必提供準確資訊，否則 offer 可能帶著錯誤資訊，且該計畫累積不到任何點數。</div>
+<p class="src">來源：Adding Corporate Loyalty Programme Accounts</p>
+</section>
+
+<!-- ============ STOPS ============ -->
+<section class="guide" id="stops">
+<h2>顯示經停 <span class="tag">Search</span></h2>
+<p>階層是 <b>slice → segment → stop</b>。名詞要分清楚：</p>
+<div class="table-wrap"><table>
+<thead><tr><th>名詞</th><th>意義</th></tr></thead>
+<tbody>
+<tr><td>segment（航段）</td><td>一個航班；轉機時每一段都是不同航班。</td></tr>
+<tr><td>stop（經停）</td><td>同一個航班（<b>同班號</b>）中途落地，原因可能是加油、上下客，或換機型但班號不變。</td></tr>
+<tr><td>layover（過站）</td><td>落地後換<b>不同班號</b>繼續，時間從 30 分鐘到 23 小時 59 分。</td></tr>
+<tr><td>stopover（停留）</td><td>layover 滿 24 小時以上，是 layover 的子集合。</td></tr>
+</tbody></table></div>
+<p>「直飛（non-stop）」與「有經停的直達（direct）」是旅客選 offer 的關鍵，因此值得顯示。實際呈現方式依產品而定，簡單的作法可能更好。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">def describe_stops(offer):
+    for slice_ in offer["slices"]:
+        for seg in slice_["segments"]:
+            flight = f'{seg["marketing_carrier"]["iata_code"]}{seg["marketing_carrier_flight_number"]}'
+            print(f'{flight}: {seg["origin"]["iata_code"]} → {seg["destination"]["iata_code"]}')
+            for stop in seg.get("stops") or []:
+                # duration 為 ISO 8601，例如 "PT02H26M"
+                print(f'   經停 {stop["airport"]["iata_code"]}，停留 {stop["duration"]}，'
+                      f'再起飛時間 {stop["departing_at"]}')</pre></div>
+<p><code>stops</code> 範例欄位：<code>id</code>、<code>duration</code>（如 <code>PT02H26M</code>）、<code>departing_at</code>，以及完整的 <code>airport</code> 物件（<code>iata_code</code>、<code>name</code>、<code>time_zone</code>、<code>city</code>…）。</p>
+<p class="src">來源：Displaying Stops</p>
+</section>
+
+<!-- ============ CONDITIONS ============ -->
+<section class="guide" id="conditions">
+<h2>顯示改票／退票條件 <span class="tag">Search</span></h2>
+<p>offer 與 order 都有 <code>conditions</code> 屬性，不需呼叫新的 API，只要解讀即可。裡面有兩種條件：<code>change_before_departure</code>（起飛前改票）與 <code>refund_before_departure</code>（起飛前退票）。</p>
+
+<h3>航空公司怎麼定義「改」與「退」</h3>
+<ul>
+  <li><b>退票（refund）</b>：拿回錢；若有罰金，會從退款中扣掉。</li>
+  <li><b>改票（change）</b>：保留部分價值改成別的航班，需補價差，若有罰金也要付。<b>就算你「取消所有航班、之後再挑新的」，航空公司仍稱為「改票」</b>。</li>
+</ul>
+
+<h3>條件的層級</h3>
+<ul>
+  <li><b>頂層</b>（offer／order）：同時處理<b>所有 slice、所有乘客</b>的條件。</li>
+  <li><b>slice 層級</b>：只改那一個 slice（例如只改回程日期）。</li>
+  <li><b>沒有 slice 層級的退票條件</b>：多個 slice 的訂單無法只退一個 slice，航空公司視為「改票」。</li>
+</ul>
+
+<h3>每個條件的欄位</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>欄位</th><th>說明</th></tr></thead>
+<tbody>
+<tr><td><code>allowed</code></td><td>布林值，是否允許。</td></tr>
+<tr><td><code>penalty_amount</code>、<code>penalty_currency</code></td><td>罰金（已知時）；不一定與訂單幣別相同，處理改退時會依當時匯率換算。</td></tr>
+</tbody></table></div>
+<div class="callout caution"><strong class="t">適用範圍</strong>只涵蓋<b>起飛前、旅客自願</b>的改退。只要任何一段已起飛（即使旅客沒搭），或是航空公司造成的非自願異動（班表變更、取消），適用不同規則。</div>
+
+<h3>如何解讀</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>情境</th><th>資料樣貌</th></tr></thead>
+<tbody>
+<tr><td>不可退票</td><td><code>allowed: false</code>，罰金欄位為 <code>null</code></td></tr>
+<tr><td>可退票但有罰金</td><td><code>allowed: true</code>，罰金非零（例如 <code>"100.00"</code> GBP）</td></tr>
+<tr><td>免費退票</td><td><code>allowed: true</code>，罰金 <code>"0.00"</code></td></tr>
+<tr><td>全部都不可改</td><td>頂層 <code>change_before_departure.allowed: false</code></td></tr>
+<tr><td>部分可改</td><td>頂層為 <code>false</code>，但某個 slice 的 <code>conditions</code> 為 <code>true</code>（如去程可改，罰金 25 GBP）</td></tr>
+<tr><td>未知</td><td>條件本身為 <code>null</code>。<b>不代表不能改退或沒有費用，只代表 Duffel 不知道</b>。</td></tr>
+<tr><td>允許但罰金未知</td><td><code>allowed: true</code>，但 <code>penalty_amount</code> 與 <code>penalty_currency</code> 為 <code>null</code></td></tr>
+</tbody></table></div>
+
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">def describe_condition(cond):
+    """把單一條件轉成給客人看的文字。"""
+    if cond is None:
+        return "未知（Duffel 沒有此資料）"
+    if not cond["allowed"]:
+        return "不允許"
+    amount = cond["penalty_amount"]
+    if amount is None:
+        return "允許，罰金未知"
+    if float(amount) == 0:
+        return "允許，免手續費"
+    return f'允許，罰金 {amount} {cond["penalty_currency"]}'
+
+
+def describe_conditions(offer_or_order):
+    cond = offer_or_order["conditions"]
+    print("整張訂單改票：", describe_condition(cond["change_before_departure"]))
+    print("整張訂單退票：", describe_condition(cond["refund_before_departure"]))
+    for i, slice_ in enumerate(offer_or_order["slices"]):
+        change = slice_["conditions"]["change_before_departure"]
+        print(f"  第 {i + 1} 段改票：", describe_condition(change))</pre></div>
+<p class="src">來源：Displaying Offer and Order Conditions</p>
+</section>
+
+<!-- ============ AIRPORTS ============ -->
+<section class="guide" id="airports">
+<h2>依區域找機場 <span class="tag">Search</span></h2>
+<p>航班是機場對機場；航空業另有「城市」（都會區，可含多個機場）的概念。要找某地點附近的機場，用 <code>GET /places/suggestions</code>，以緯度 <code>lat</code>、經度 <code>lng</code> 與半徑 <code>rad</code>（公尺）查詢。</p>
+<p>範例：葡萄牙 Lagos 沒有機場，查 100 公里內的機場（會回傳 Portimão 與 Faro 兩座）。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">places = duffel(
+    "GET",
+    "/places/suggestions",
+    params={"lat": 37.129665, "lng": -8.669586, "rad": 100000},
+)
+
+for p in places:
+    print(p["type"], p["iata_code"], p["name"], p["city_name"])
+# airport PRM Portimão Airport Portimão
+# airport FAO Faro Airport Faro</pre></div>
+<p>拿到機場後，可對每座機場<b>各自搜尋</b>，再自行合併兩份結果的 offers 給旅客挑選。想做多步驟搜尋，可參考官方 Multi-Step Search 指南與 Partial Offer Request 參考文件。</p>
+<p class="src">來源：Finding Airports within an Area</p>
+</section>
+
+<!-- ============ HOLD ============ -->
+<section class="guide" id="hold">
+<h2>保留訂位、稍後付款 <span class="tag">Booking</span></h2>
+<div class="callout"><strong class="t">支援範圍</strong>並非所有航空公司都支援。官方建議用 Duffel Airways 或 American Airlines 的 offer 來練習。</div>
+<p>保留（hold）訂位是先占位、之後再付款（業界稱 deferred ticketing）。作法：建立訂單<b>不給付款</b>，並在訂單指定的時間前付款。三步驟：找出可保留的 offer → 建立 <code>type: "hold"</code> 訂單 → 在期限前付款。</p>
+
+<h3>1. 找出可保留的 offer</h3>
+<p>判斷依據是 <code>payment_requirements.requires_instant_payment</code> 為 <code>false</code>。永遠檢查這個欄位，而不是假設某家航空公司一定支援。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer_request = duffel("POST", "/air/offer_requests", data={
+    "slices": [{"origin": "LHR", "destination": "LGW", "departure_date": "2026-06-21"}],
+    "passengers": [{"type": "adult"}],
+})
+
+holdable = [
+    o for o in offer_request["offers"]
+    if not o["payment_requirements"]["requires_instant_payment"]
+]</pre></div>
+<div class="code"><div class="bar"><span>json</span><button class="copy">複製</button></div><pre data-lang="json">"payment_requirements": {
+  "requires_instant_payment": false,
+  "price_guarantee_expires_at": "2021-06-01T23:59:59Z",
+  "payment_required_by": "2021-06-20T23:59:59Z"
+}</pre></div>
+<ul>
+  <li><code>price_guarantee_expires_at</code> 非 <code>null</code>：航空公司在該時間前鎖住價格（前提是你建立 hold 訂單）。</li>
+  <li>為 <code>null</code>：座位保留到 <code>payment_required_by</code>，但付款前價格<b>可能改變</b>。</li>
+</ul>
+
+<h3>2. 建立 hold 訂單</h3>
+<p>與一般訂單相比：<code>type</code> 設為 <code>hold</code>，並<b>省略 <code>payments</code></b>。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order = duffel("POST", "/air/orders", data={
+    "type": "hold",
+    "selected_offers": [offer_id],
+    "passengers": [{
+        "id": passenger_id,
+        "title": "mr", "gender": "m",
+        "given_name": "Tony", "family_name": "Stark",
+        "born_on": "1980-07-24",
+        "email": "tony@example.com", "phone_number": "+442080160508",
+    }],
+})
+
+print(order["payment_status"])
+# {"price_guarantee_expires_at": "...", "payment_required_by": "...", "awaiting_payment": True}</pre></div>
+<p>若沒在 <code>payment_required_by</code> 前付款，航空公司會釋出座位，<code>awaiting_payment</code> 會變成 <code>false</code>，需重新建立訂單。</p>
+
+<h3>3. 取得最新價格並付款</h3>
+<p>付款前一定要先重新取得訂單，用最新價格付款；否則會得到 <code>price_changed</code> 錯誤（收到後重新取回訂單即可）。目前無法取得訂單的價格歷史，需要的話請自行記錄。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order = duffel("GET", f"/air/orders/{order_id}")
+
+payment = duffel("POST", "/air/payments", data={
+    "order_id": order["id"],
+    "payment": {
+        "type": "balance",
+        "amount": order["total_amount"],       # 須與目前訂單價格相符
+        "currency": order["total_currency"],
+    },
+})
+
+# 驗證：awaiting_payment 應為 False，且已開立 documents
+order = duffel("GET", f"/air/orders/{order_id}")
+print(order["payment_status"]["awaiting_payment"], order["documents"])
+# False [{"unique_identifier": "123-1230984567", "type": "electronic_ticket"}]</pre></div>
+<div class="callout caution"><strong class="t">欄位名稱不一致</strong>此指南的 <code>POST /air/payments</code> 範例用單數的 <code>payment</code>；而「<a href="#accurate-price">取得準確價格</a>」指南的同一端點範例用複數陣列 <code>payments</code>。兩份官方文件並列，實作前請對照官方 API Reference 確認你使用的版本。</div>
+
+<h3>價格保證到期與班表異動</h3>
+<ul>
+  <li>價格保證可能在訂單期間到期；到期後取回訂單可能得到新價格，<code>price_guarantee_expires_at</code> 會更新（新價格有保證）或變 <code>null</code>。訂單仍可持續完成到 <code>payment_required_by</code>。</li>
+  <li>一般即時訂單遇到班表異動，Duffel 通常會通知你；但 hold 訂單在<b>付款前不會通知</b>。若航空公司在你建單與付款之間更動，付款時會收到 <code>schedule_changed</code> 錯誤，避免你付錢買到不同行程。</li>
+</ul>
+<p class="src">來源：Holding Orders and Paying Later</p>
+</section>
+
+<!-- ============ BAGS ============ -->
+<section class="guide" id="bags">
+<h2>加購行李 <span class="tag">Booking</span></h2>
+<div class="callout"><strong class="t">支援範圍</strong>並非所有航空公司都支援訂位時加購行李，官方建議用 British Airways 的 offer 練習。如想快速提供加購而不自己做 UI，可使用 Duffel 的 Ancillaries component。</div>
+<p>行李屬於 <code>available_services</code>：服務是針對特定 offer 的，預設不會回傳。流程：</p>
+<ol class="steps">
+  <li>取得 offer 並帶出 <code>available_services</code>。</li>
+  <li>建立訂單時帶上 <code>services</code>。</li>
+  <li>在訂單上查看已購服務。</li>
+</ol>
+
+<h3>1. 取得 offer 的可加購服務</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">offer = duffel(
+    "GET",
+    f"/air/offers/{offer_id}",
+    params={"return_available_services": "true"},
+)
+
+for svc in offer["available_services"]:
+    print(svc["id"], svc["type"], svc["metadata"],
+          svc["total_amount"], svc["total_currency"],
+          "最多", svc["maximum_quantity"],
+          "航段", svc["segment_ids"], "乘客", svc["passenger_ids"])</pre></div>
+<p>每個服務有唯一 ID；價格以 <code>total_amount</code>／<code>total_currency</code> 表示；內容由 <code>type</code> 與 <code>metadata</code> 決定；並綁定特定航段與乘客（<code>segment_ids</code>、<code>passenger_ids</code>）。目前支援的可加購服務為行李（選位見<a href="#seats">選位</a>）。</p>
+
+<h3>2. 訂位時加入服務</h3>
+<p>在建立訂單的 payload 加上 <code>services</code>，每項包含服務 ID 與數量；<b>付款金額要加上「單價 × 數量」</b>。例如 offer 總額 50 GBP，服務 A 數量 2、單價 10 GBP，付款金額應為 70 GBP。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">from decimal import Decimal
+
+wanted = [(service_id_1, 2), (service_id_2, 1)]
+price_of = {s["id"]: Decimal(s["total_amount"]) for s in offer["available_services"]}
+
+total = Decimal(offer["total_amount"]) + sum(price_of[sid] * qty for sid, qty in wanted)
+
+order = duffel("POST", "/air/orders", data={
+    "selected_offers": [offer["id"]],
+    "payments": [{"type": "balance",
+                  "currency": offer["total_currency"],
+                  "amount": f"{total:.2f}"}],
+    "passengers": passengers,
+    "services": [{"id": sid, "quantity": qty} for sid, qty in wanted],
+})</pre></div>
+
+<h3>3. 查看訂單上的服務與文件</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order = duffel("GET", f"/air/orders/{order['id']}")
+print(order["services"])    # 與 available service 相同，但 maximum_quantity 換成 quantity
+print(order["documents"])</pre></div>
+<div class="callout caution"><strong class="t">注意</strong><ul>
+<li>以加購服務買的行李<b>不會</b>出現在 <code>slices[].segments[].passengers[].baggages[]</code>，只在 <code>services</code>。要看旅客完整行李，兩邊都要合併。</li>
+<li>部分航空公司把加購服務的訂位與付款記在電子機票之外的另一份文件（EMD）。可用時，會以 <code>type: "electronic_miscellaneous_document_associated"</code> 的 document 呈現。</li>
+</ul></div>
+<p class="src">來源：Adding Extra Bags</p>
+</section>
+
+<!-- ============ SEATS ============ -->
+<section class="guide" id="seats">
+<h2>選位 <span class="tag">Booking</span></h2>
+<div class="callout"><strong class="t">支援範圍</strong>並非所有航空公司都支援選位。官方建議使用 American Airlines 的 offer（例如 <code>DFW</code>→<code>AUS</code>，約三個月後的日期）。同樣也可用 Ancillaries component 免自建 UI。</div>
+
+<h3>1. 取得座位圖</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">seat_maps = duffel("GET", "/air/seat_maps", params={"offer_id": offer_id})
+
+if not seat_maps:
+    print("此 offer 不支援選位")   # 不支援時回傳空陣列，要優雅處理
+
+for sm in seat_maps:   # 一個 offer 可含多個航段 → 多張座位圖
+    print(sm["id"], sm["segment_id"], len(sm["cabins"]), "個艙")</pre></div>
+<p>即使航空公司支援選位，某些 offer 也可能不能選（例如含其他航空公司航班）。這時 <code>data</code> 會是空陣列 <code>[]</code>。</p>
+
+<h3>2. 解讀座位圖資料</h3>
+<ul>
+  <li><code>cabins[]</code>：各艙（含 <code>cabin_class</code>、<code>aisles</code> 走道數、<code>deck</code>、<code>wings</code> 機翼位置）。</li>
+  <li><code>rows[]</code> → <code>sections[]</code> → <code>elements[]</code>。走道數 N 會讓每一列有 N+1 個 section（例如 2 條走道 → 左、中、右三區）。</li>
+  <li><code>elements[].type</code>：<code>seat</code> 為座位，另有廁所、廚房（galley）、緊急出口列（<code>exit_row</code>）等非座位元素；需要時可渲染成空白或標記。</li>
+  <li>座位的 <code>designator</code> 如 <code>28B</code>；<code>disclosures[]</code> 是該座位的規則文字（如「乘客須為成人」），要顯示給客人。</li>
+  <li><b><code>available_services</code> 為空陣列 <code>[]</code> = 該座位不可選</b>。有可用服務的座位，每位乘客各有一筆（航空公司可能對不同乘客收不同價格），含 <code>passenger_id</code>、<code>total_amount</code>（可為 0，即免費）、<code>total_currency</code>。</li>
+  <li>列索引從 0 開始（第一列是 index 0）；<code>wings.first_row_index</code>／<code>last_row_index</code> 可用來在側邊畫機翼標記。</li>
+</ul>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">def list_free_and_paid_seats(seat_map, passenger_id):
+    """回傳 {座位號: (service_id, 價格, 幣別)}，只含該乘客可選的座位。"""
+    result = {}
+    for cabin in seat_map["cabins"]:
+        for row in cabin["rows"]:
+            for section in row["sections"]:
+                for el in section["elements"]:
+                    if el["type"] != "seat":
+                        continue
+                    for svc in el["available_services"]:
+                        if svc["passenger_id"] == passenger_id:
+                            result[el["designator"]] = (
+                                svc["id"], svc["total_amount"], svc["total_currency"]
+                            )
+    return result</pre></div>
+
+<h3>3. 建立訂單時指定座位</h3>
+<p>用 <code>services</code> 帶入座位對應的 <code>available_service</code> ID，<code>quantity</code> 固定為 <code>1</code>。想為乘客 <code>pas_…</code> 選 <code>28B</code>，就用該座位上屬於此乘客的服務 ID。也可同時加行李，只要在 <code>services</code> 多放幾項。付款金額＝ offer 的 <code>total_amount</code> ＋ 所有服務的 <code>total_amount</code>。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">from decimal import Decimal
+
+seats = list_free_and_paid_seats(seat_maps[0], passenger_id)
+seat_service_id, seat_price, _ = seats["28B"]
+
+total = Decimal(offer["total_amount"]) + Decimal(seat_price)
+
+order = duffel("POST", "/air/orders", data={
+    "selected_offers": [offer["id"]],
+    "payments": [{"type": "balance",
+                  "currency": offer["total_currency"],
+                  "amount": f"{total:.2f}"}],
+    "passengers": passengers,
+    "services": [{"id": seat_service_id, "quantity": 1}],
+})</pre></div>
+
+<h3>4. 檢查結果</h3>
+<p>建單後（或之後取回訂單）可在頂層 <code>services</code> 看到座位服務；<code>slices[].segments[].passengers[]</code> 內則有 <code>seat</code> 屬性，內含座位號（例如 <code>1D</code>）。</p>
+<p class="src">來源：Adding Seats</p>
+</section>
+
+<!-- ============ ACCURATE PRICE ============ -->
+<section class="guide" id="accurate-price">
+<h2>取得準確價格 <span class="tag">Booking</span></h2>
+<p>在付款前算出含手續費的準確價格，特別重要於兩種情況：</p>
+<ol>
+  <li><b>信用卡附加費（surcharge）</b>：航空公司對特定卡（常見於企業卡）收取的額外費用。</li>
+  <li><b>幣別會依付款方式改變</b>：航空公司可能依付款方式用不同幣別收費。</li>
+</ol>
+<p>先依<a href="https://duffel.com/docs/guides/paying-with-customer-cards" target="_blank" rel="noopener">「Paying with customer cards」</a>建立 card 資源。</p>
+<div class="callout caution"><strong class="t">卡片 25 分鐘過期</strong>基於安全，card 紀錄 25 分鐘後失效。失效後必須建立新的 card 資源（可代表同一張實體卡），並重新計價才能付款。</div>
+
+<h3>兩種流程</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>即時訂單</th><th>保留訂單</th></tr></thead>
+<tbody><tr>
+<td><ol><li>搜尋 offers</li><li>以付款方式為 offer 計價</li><li>顯示含附加費的總額</li><li>（可選）換付款方式重新計價</li><li>建立即時訂單並付款</li></ol></td>
+<td><ol><li>搜尋 offers</li><li>建立 hold 訂單</li><li>以付款方式為訂單計價</li><li>顯示含附加費的總額</li><li>（可選）換付款方式重新計價</li><li>完成付款</li></ol></td>
+</tr></tbody></table></div>
+
+<h3>為 offer 計價</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">priced = duffel("POST", f"/air/offers/{offer_id}/actions/price", data={
+    "intended_payment_methods": [
+        {"type": "card", "card_id": "tcd_00009hthhsUZ8W4LxQgkjb"}
+    ],
+    "intended_services": [
+        {"quantity": 1, "id": "ase_00009hj8USM7Ncg31cB123"}
+    ],
+})
+
+card = priced["intended_payment_methods"][0]
+print(card["charge_amount"], card["charge_currency"])        # 301.57 USD → 實際刷卡金額
+print(card["surcharge_amount"], card["surcharge_currency"])  # 1.57 USD</pre></div>
+<ul>
+  <li><code>total_amount</code> 已<b>包含</b> <code>intended_services</code>，但<b>不含</b>信用卡附加費。</li>
+  <li>付款時請直接使用卡片的 <code>charge_amount</code>／<code>charge_currency</code>，<b>不要再重複加服務或附加費</b>。</li>
+  <li>付款方式會影響幣別，一定要檢查回應中的 <code>total_currency</code>。</li>
+  <li>對同一個 offer 多次呼叫，offer 代表<b>最後一次</b>的 <code>intended_payment_methods</code> 價格。</li>
+  <li>不能在同一請求同時放 card 與 balance；airline credits 可與 card 合併使用。</li>
+</ul>
+
+<h3>選項 A：即時訂單</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order = duffel("POST", "/air/orders", data={
+    "type": "instant",
+    "selected_offers": [offer_id],
+    "payments": [{
+        "type": "card",
+        "three_d_secure_session_id": "3ds_0000AWr2XsTR1F1Vp34gh5",
+        "currency": card["charge_currency"],
+        "amount": card["charge_amount"],
+    }],
+    "services": [{"quantity": 1, "id": "ase_00009hj8USM7Ncg31cB123"}],
+    "passengers": passengers,
+})</pre></div>
+<div class="callout caution"><strong class="t">必須完全一致</strong><ul>
+<li><code>payments</code> 必須與最後一次計價的 <code>intended_payment_methods</code> 完全相符；卡片付款時，<code>three_d_secure_session_id</code> 必須由同一張卡產生。</li>
+<li><code>services</code> 也必須與計價時相同。不一致會得到驗證錯誤。</li>
+<li>已付款訂單的回應不會再回傳 <code>intended_payment_methods</code>。</li>
+</ul></div>
+
+<h3>選項 B：保留訂單，之後計價與付款</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">hold = duffel("POST", "/air/orders", data={
+    "type": "hold",
+    "selected_offers": [offer_id],
+    "services": [{"quantity": 1, "id": "ase_00009hj8USM7Ncg31cB123"}],
+    "passengers": passengers,
+})
+
+# 為 hold 訂單附上／更換付款方式以取得最終價格
+priced_order = duffel("POST", f"/air/orders/{hold['id']}/actions/price", data={
+    "intended_payment_methods": [{"type": "card", "card_id": "tcd_00009hthhsUZ8W4LxQgkjb"}],
+})
+card = priced_order["intended_payment_methods"][0]
+
+duffel("POST", "/air/payments", data={
+    "order_id": hold["id"],
+    "payments": [{
+        "type": "card",
+        "three_d_secure_session_id": "3ds_0000AWr2XsTR1F1Vp34gh5",
+        "currency": card["charge_currency"],
+        "amount": card["charge_amount"],
+    }],
+})</pre></div>
+<ul>
+  <li>換不同的 <code>intended_payment_methods</code> 再計價，價格以<b>最後一次</b>為準；幣別也可能改變。</li>
+  <li><b>與 offer 不同，hold 訂單計價時不能更改 services</b>，服務在建單時就固定。</li>
+  <li>訂單 <code>total_amount</code> 已含服務，並可能含卡片附加費。</li>
+</ul>
+
+<h3>最佳實務</h3>
+<ul>
+  <li>票價與附加費分開顯示，付款方式選定後更新總額；說明附加費常被供應商視為不可退款。</li>
+  <li>清楚顯示最終幣別。</li>
+  <li>盡量在接近付款時才建立 card 資源，並實作過期重試。</li>
+  <li>測試：以卡片為 Duffel Airways 的 offer／order 計價時，會回傳非零的 <code>surcharge_amount</code>，方便測試你的應用反應。</li>
+  <li>錯誤 <code>invalid_intended_card</code>（HTTP 422）代表當作預定付款方式的卡片已過期；<code>GET /air/offers/:id</code>、<code>GET /air/seat_maps</code>、<code>PATCH /air/offers/:offer_id/passengers</code> 也會因為用最後一次付款方式重新計價而回傳此錯誤。</li>
+</ul>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">def price_with_card(offer_id, make_card):
+    """卡片過期時，建立新卡並重新計價（最多重試一次）。"""
+    for attempt in range(2):
+        card_id = make_card()   # 自行實作：建立 card 資源並回傳 ID
+        try:
+            return duffel("POST", f"/air/offers/{offer_id}/actions/price", data={
+                "intended_payment_methods": [{"type": "card", "card_id": card_id}],
+            })
+        except DuffelError as e:
+            expired = any(err.get("code") == "invalid_intended_card" for err in e.errors)
+            if not expired or attempt == 1:
+                raise</pre></div>
+<p class="src">來源：Getting An Accurate Price Before Booking</p>
+</section>
+
+<!-- ============ CANCEL ============ -->
+<section class="guide" id="cancel">
+<h2>取消訂單 <span class="tag">Post-booking</span></h2>
+<div class="callout"><strong class="t">先檢查</strong>並非所有訂單都能用 API 取消。只有訂單的 <code>available_actions</code> 含 <code>"cancel"</code> 才能；否則請在 Dashboard 的訂單頁用「Manage this order → Cancellation quote」手動申請，由 Duffel 團隊處理。</div>
+<p>兩步驟：<b>建立（尚未生效的）取消報價</b> → <b>確認取消</b>。</p>
+
+<h3>1. 建立取消報價</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order = duffel("GET", f"/air/orders/{order_id}")
+if "cancel" not in order["available_actions"]:
+    raise RuntimeError("此訂單無法透過 API 取消，請改用 Dashboard 申請取消報價")
+
+quote = duffel("POST", "/air/order_cancellations", data={"order_id": order_id})
+
+print(quote["id"])                                   # ore_…，下一步要用
+print(quote["refund_amount"], quote["refund_currency"])
+print(quote["refund_to"])                            # original_form_of_payment / airline_credits…
+print(quote["expires_at"])                           # 過期後需重新取得報價</pre></div>
+<ul>
+  <li>依 <code>refund_amount</code> 決定是否繼續。</li>
+  <li><code>expires_at</code> 已過就不能確認，需重新取得報價。</li>
+  <li><code>refund_to</code> 表示退款去向，如 <code>original_form_of_payment</code>（退回原付款方式）。</li>
+</ul>
+
+<h3>2. 確認取消</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">confirmed = duffel("POST", f"/air/order_cancellations/{quote['id']}/actions/confirm")
+print(confirmed["confirmed_at"])   # 有時間戳 = 訂單已取消，退款已套用</pre></div>
+<p>只能確認<b>最近一次</b>的取消報價，否則會收到 <code>order_cancellation_stale</code> 錯誤。被取消的訂單會在其 <code>cancellation</code> 屬性帶有已確認的 Order Cancellation。</p>
+
+<h3>航空公司點數（Airline Credits）</h3>
+<p>航空公司有時以「點數／代碼」取代現金退款，可折抵未來機票。此時 <code>refund_to</code> 為 <code>airline_credits</code>，且 <code>airline_credits</code> 陣列會列出明細（確認取消前 <code>credit_code</code> 為 <code>null</code>）。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">if quote["refund_to"] == "airline_credits":
+    for credit in quote["airline_credits"]:
+        print(credit["passenger_id"], credit["credit_name"],
+              credit["credit_amount"], credit["credit_currency"])
+    # 確認取消後，credit_code 才會有值，需把代碼交給旅客
+    confirmed = duffel("POST", f"/air/order_cancellations/{quote['id']}/actions/confirm")
+    codes = [c["credit_code"] for c in confirmed["airline_credits"]]</pre></div>
+<p>測試 airline credits 可使用倫敦 Luton (<code>LTN</code>) → Stansted (<code>STN</code>) 的測試路線。</p>
+<p class="src">來源：Cancelling an Order</p>
+</section>
+
+<!-- ============ CHANGE ============ -->
+<section class="guide" id="change">
+<h2>更改訂單 <span class="tag">Post-booking</span></h2>
+<div class="callout"><strong class="t">先檢查</strong>並非所有訂單都能改。訂單的 <a href="https://duffel.com/docs/api/orders/schema#available_actions" target="_blank" rel="noopener"><code>available_actions</code></a> 需含 <code>"change"</code>。</div>
+<p>情境：Tony 一家想把回程延後一週，改到 6/24 返回。流程四步：</p>
+<ol class="steps">
+  <li>建立改票請求（order change request）。</li>
+  <li>檢視可用的改票報價（order change offers）。</li>
+  <li>建立待確認的變更（pending order change）。</li>
+  <li>確認變更並付款。</li>
+</ol>
+
+<h3>0. 先取得訂單，找出要移除的 slice</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order = duffel("GET", f"/air/orders/{order_id}")
+assert "change" in order["available_actions"]
+
+# 每個 slice 都有唯一 ID；這裡要移除回程（第二個 slice）
+slice_to_remove_id = order["slices"][1]["id"]</pre></div>
+
+<h3>1. 建立改票請求</h3>
+<p>提供要<b>移除</b>的 slice 清單，以及要<b>新增</b>的搜尋條件。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">change_request = duffel("POST", "/air/order_change_requests", data={
+    "order_id": order_id,
+    "slices": {
+        "remove": [{"slice_id": slice_to_remove_id}],
+        "add": [{
+            "origin": "ATL",
+            "destination": "SWF",
+            "departure_date": "2026-06-24",
+            "cabin_class": "business",
+        }],
+    },
+})
+change_request_id = change_request["id"]   # ocr_…</pre></div>
+
+<h3>2. 檢視可用的改票報價</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">change_request = duffel("GET", f"/air/order_change_requests/{change_request_id}")
+
+for o in change_request["order_change_offers"]:
+    print(o["id"],
+          "價差", o["change_total_amount"],      # 新舊航班價差，可正可負
+          "罰金", o["penalty_total_amount"],     # 航空公司收的手續費
+          o["change_total_currency"])</pre></div>
+<p>每個 <code>order_change_offers</code> 都含要新增／移除的 slice 細節，以及 <code>change_total_amount</code>（價差，新航班可能更貴或更便宜）與 <code>penalty_total_amount</code>（航空公司罰金）。</p>
+
+<h3>3. 建立待確認的變更</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order_change = duffel("POST", "/air/order_changes", data={
+    "selected_order_change_offer": chosen_offer_id,
+})
+print(order_change["confirmed_at"])   # None → 尚未確認
+
+# 待確認變更的價格可能隨時間改變，付款前務必取得最新價格並讓客戶確認
+order_change = duffel("GET", f"/air/order_changes/{order_change['id']}")</pre></div>
+<div class="callout caution"><strong class="t">注意</strong>待確認變更的價格<b>會變動</b>，請讓客戶看過最終價格再確認。同樣必須顯示 Duffel 規定的<a href="https://help.duffel.com/hc/en-gb/articles/360021056640" target="_blank" rel="noopener">法律告知</a>。</div>
+
+<h3>4. 確認變更</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">confirmed = duffel("POST", f"/air/order_changes/{order_change['id']}/actions/confirm", data={
+    "payment": {
+        "type": "balance",
+        "currency": order_change["change_total_currency"],
+        "amount": order_change["change_total_amount"],
+    },
+})
+print(confirmed["confirmed_at"])   # 有時間戳 = 已生效</pre></div>
+<p>確認後，原訂單會顯示新的 slices，並帶有航空公司的 <code>booking_reference</code>。之後隨時可用訂單 <code>id</code> 取回。</p>
+<div class="callout"><strong class="t">備註</strong>官方範例的 confirm 付款金額寫死 <code>"50.00"</code> GBP；實務上應使用最新 order change 的應付金額。上方範例以 <code>change_total_*</code> 示意，欄位名稱以你取得的實際回應為準。</div>
+<p class="src">來源：Changing an Order</p>
+</section>
+
+<!-- ============ POST BAGS ============ -->
+<section class="guide" id="post-bags">
+<h2>訂位後加購行李 <span class="tag">Post-booking</span></h2>
+<div class="callout"><strong class="t">支援範圍</strong>訂位後加購尚未支援所有航空公司，官方建議用 easyJet 的訂單練習。另外，<b>只能對原訂單沒有包含行李的情況</b>加購。</div>
+
+<h3>1. 列出訂單的可加購服務</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">services = duffel("GET", f"/air/orders/{order_id}/available_services")
+
+for s in services:
+    print(s["id"], s["type"], s["metadata"],
+          s["total_amount"], s["total_currency"],
+          s["segment_ids"], s["passenger_ids"])</pre></div>
+
+<h3>2. 付款並加購</h3>
+<p>對 <code>/air/orders/:id/services</code> 送出 <code>add_services</code>（每項含服務 ID 與數量）及 <code>payment</code>。金額＝ Σ（單價 × 數量）。例如服務 A 數量 2、單價 10 GBP，付款為 20 GBP。</p>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">from decimal import Decimal
+
+wanted = [(service_id_1, 2), (service_id_2, 1)]
+price_of = {s["id"]: Decimal(s["total_amount"]) for s in services}
+total = sum(price_of[sid] * qty for sid, qty in wanted)
+
+order = duffel("POST", f"/air/orders/{order_id}/services", data={
+    "payment": {
+        "type": "balance",
+        "currency": services[0]["total_currency"],
+        "amount": f"{total:.2f}",
+    },
+    "add_services": [{"id": sid, "quantity": qty} for sid, qty in wanted],
+})</pre></div>
+
+<h3>3. 查看訂單上的服務</h3>
+<div class="code"><div class="bar"><span>python</span><button class="copy">複製</button></div><pre data-lang="python">order = duffel("GET", f"/air/orders/{order_id}")
+print(order["services"])   # quantity 取代 maximum_quantity</pre></div>
+<p>與訂位時加購相同：加購的行李只在 <code>services</code> 內，不在 <code>slices[].segments[].passengers[].baggages[]</code>，要看完整行李需合併兩者。</p>
+<p class="src">來源：Adding Post Booking Bags</p>
+</section>
+
+<!-- ============ FULL SCRIPT ============ -->
+<section class="guide" id="full-script">
+<h2>完整流程腳本</h2>
+<p>把「搜尋 → 取得最新 offer → 看座位圖 → 建立訂單 → 取消報價」串成一支可執行的範例。請使用<b>測試 token</b>，並依你想測的航空公司調整路線與日期（Duffel Airways 為測試用航空公司）。</p>
+<div class="code"><div class="bar"><span>flow.py</span><button class="copy">複製</button></div><pre data-lang="python">from datetime import date, timedelta
+from decimal import Decimal
+
+# 假設 duffel() 與 DuffelError 已定義（見「環境與共用 helper」）
+
+depart = (date.today() + timedelta(days=90)).isoformat()
+
+# 1) 搜尋
+req = duffel("POST", "/air/offer_requests", params={"return_offers": "true"}, data={
+    "slices": [{"origin": "LHR", "destination": "LGW", "departure_date": depart}],
+    "passengers": [{"type": "adult"}],
+    "cabin_class": "economy",
+    "max_connections": 0,
+})
+cheapest = min(req["offers"], key=lambda o: Decimal(o["total_amount"]))
+passenger_id = req["passengers"][0]["id"]
+
+# 2) 取得最新 offer（含可加購服務）
+offer = duffel("GET", f"/air/offers/{cheapest['id']}",
+               params={"return_available_services": "true"})
+print("總價", offer["total_amount"], offer["total_currency"])
+
+# 3) 看看能不能選位
+seat_maps = duffel("GET", "/air/seat_maps", params={"offer_id": offer["id"]})
+print("座位圖數量：", len(seat_maps))
+
+# 4) 建立訂單
+order = duffel("POST", "/air/orders", data={
+    "selected_offers": [offer["id"]],
+    "payments": [{"type": "balance",
+                  "currency": offer["total_currency"],
+                  "amount": offer["total_amount"]}],
+    "passengers": [{
+        "id": passenger_id,
+        "title": "mr", "gender": "m",
+        "given_name": "Tony", "family_name": "Stark",
+        "born_on": "1980-07-24",
+        "email": "tony@example.com", "phone_number": "+442080160508",
+    }],
+})
+print("訂單", order["id"], "訂位代號", order["booking_reference"])
+
+# 5) 取消報價（先看退多少，再決定是否確認）
+if "cancel" in order["available_actions"]:
+    quote = duffel("POST", "/air/order_cancellations", data={"order_id": order["id"]})
+    print("退款", quote["refund_amount"], quote["refund_currency"], "→", quote["refund_to"])
+    # duffel("POST", f"/air/order_cancellations/{quote['id']}/actions/confirm")</pre></div>
+</section>
+
+<!-- ============ ERRORS ============ -->
+<section class="guide" id="errors">
+<h2>錯誤處理與檢查表</h2>
+<h3>指南中出現的錯誤碼</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>錯誤</th><th>出現情境</th><th>處理</th></tr></thead>
+<tbody>
+<tr><td><code>price_changed</code></td><td>用過時價格支付 hold 訂單</td><td>重新 <code>GET /air/orders/:id</code> 後用新價格付款</td></tr>
+<tr><td><code>schedule_changed</code></td><td>hold 訂單在建單與付款之間被航空公司改班表</td><td>重新確認行程，必要時重訂</td></tr>
+<tr><td><code>order_cancellation_stale</code></td><td>確認的不是最新一次取消報價</td><td>重新建立取消報價再確認</td></tr>
+<tr><td><code>invalid_intended_card</code>（422）</td><td>預定付款的卡片已過期（25 分鐘）</td><td>建立新 card 資源並重新計價</td></tr>
+</tbody></table></div>
+
+<h3>實作檢查表</h3>
+<ul>
+  <li>token 放環境變數；開發階段使用測試 token。</li>
+  <li>選定 offer 後，先 <code>GET /air/offers/:id</code> 取最新價格，再收乘客資料與付款。</li>
+  <li>建單的付款金額＝ offer 總額＋所有加購服務（座位、行李）。</li>
+  <li>使用卡片付款時，<code>payments</code> 與 <code>services</code> 必須與最後一次計價一致。</li>
+  <li>執行改票、取消前，先檢查訂單的 <code>available_actions</code>。</li>
+  <li>在 UI 顯示改退條件時，<code>null</code> 代表「未知」而不是「不允許」。</li>
+  <li>顯示 Duffel 規定的法律告知；填乘客本人的 email。</li>
+  <li>座位圖、加購服務可能為空——要有「不支援」的處理路徑。</li>
+  <li>分開購票、hold 訂單等需處理部分成功與逾時。</li>
+</ul>
+<p class="src">本頁內容整理自 duffel.com/docs/guides 之 18 篇 Flights 指南（擷取於 2026-11-05）；實際欄位與行為請以官方 API Reference 為準。</p>
+</section>
+</main>
+</div>
+
+<script>
+/* ---------- 主題切換：系統 / 亮色 / 暗色 ---------- */
+(function () {
+  var root = document.documentElement;
+  var mq = matchMedia('(prefers-color-scheme: dark)');
+  var buttons = document.querySelectorAll('.theme-switch button');
+  function apply(mode) {
+    var dark = mode === 'dark' || (mode === 'system' && mq.matches);
+    root.dataset.mode = mode;
+    root.dataset.theme = dark ? 'dark' : 'light';
+    buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.set === mode)); });
+  }
+  buttons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      localStorage.setItem('duffel-theme-mode', b.dataset.set);
+      apply(b.dataset.set);
+    });
+  });
+  mq.addEventListener('change', function () { if (root.dataset.mode === 'system') apply('system'); });
+  apply(root.dataset.mode);
+})();
+
+/* ---------- 簡易語法上色 ---------- */
+(function () {
+  var esc = function (s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  var PY_KW = /^(?:and|as|assert|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|not|or|pass|raise|return|try|while|with|yield|True|False|None)$/;
+  var PY_BUILTIN = /^(?:print|len|float|int|str|min|max|sum|any|all|range|enumerate|isinstance|super|Decimal|requests)$/;
+  function highlightPython(src) {
+    var re = /(#[^\n]*)|([rRfFbB]{0,2}(?:"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'))|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z_0-9]*)(\s*\()?/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index)); last = re.lastIndex;
+      if (m[1]) out += '<span class="c">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += '<span class="s">' + esc(m[2]) + '</span>';
+      else if (m[3]) out += '<span class="n">' + m[3] + '</span>';
+      else {
+        var w = m[4];
+        if (PY_KW.test(w)) out += '<span class="k">' + w + '</span>' + esc(m[5] || '');
+        else if (m[5] || PY_BUILTIN.test(w)) out += '<span class="f">' + w + '</span>' + esc(m[5] || '');
+        else out += esc(w);
+      }
+    }
+    return out + esc(src.slice(last));
+  }
+  function highlightJson(src) {
+    var re = /(\/\*[\s\S]*?\*\/|\/\/[^\n]*)|("(?:\\.|[^"\\])*")(\s*:)?|(-?\b\d+(?:\.\d+)?\b)|\b(true|false|null)\b/g;
+    var out = '', last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index)); last = re.lastIndex;
+      if (m[1]) out += '<span class="c">' + esc(m[1]) + '</span>';
+      else if (m[2]) out += m[3] ? '<span class="p">' + esc(m[2]) + '</span>' + m[3] : '<span class="s">' + esc(m[2]) + '</span>';
+      else if (m[4]) out += '<span class="n">' + m[4] + '</span>';
+      else out += '<span class="k">' + m[5] + '</span>';
+    }
+    return out + esc(src.slice(last));
+  }
+  function highlightBash(src) {
+    return src.split('\n').map(function (l) {
+      return /^\s*#/.test(l) ? '<span class="c">' + esc(l) + '</span>' : esc(l);
+    }).join('\n');
+  }
+  document.querySelectorAll('pre[data-lang]').forEach(function (pre) {
+    var src = pre.textContent, lang = pre.dataset.lang;
+    pre.innerHTML = '<code>' + (lang === 'python' ? highlightPython(src) : lang === 'json' ? highlightJson(src) : highlightBash(src)) + '</code>';
+  });
+})();
+
+/* ---------- 複製按鈕（clipboard API 失敗時退回 execCommand） ---------- */
+function copyText(text) {
+  var viaExec = function () {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok ? Promise.resolve() : Promise.reject(new Error('copy failed'));
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).catch(viaExec);
+  }
+  return viaExec();
+}
+document.querySelectorAll('.code button.copy').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var text = btn.closest('.code').querySelector('pre').textContent;
+    var flash = function (msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = '複製'; }, 1400); };
+    copyText(text).then(function () { flash('已複製'); }, function () { flash('複製失敗'); });
+  });
+});
+
+/* ---------- 側欄：篩選、目前章節標示、行動版開關 ---------- */
+(function () {
+  var side = document.getElementById('side');
+  var links = Array.prototype.slice.call(side.querySelectorAll('a'));
+  var filter = document.getElementById('nav-filter');
+  filter.addEventListener('input', function () {
+    var q = filter.value.trim().toLowerCase();
+    links.forEach(function (a) { a.classList.toggle('hidden', q && a.textContent.toLowerCase().indexOf(q) === -1); });
+    side.querySelectorAll('h4').forEach(function (h) {
+      var el = h.nextElementSibling, any = false;
+      while (el && el.tagName === 'A') { if (!el.classList.contains('hidden')) any = true; el = el.nextElementSibling; }
+      h.classList.toggle('hidden', !any);
+    });
+  });
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting && map[e.target.id]) {
+        links.forEach(function (a) { a.classList.remove('active'); });
+        map[e.target.id].classList.add('active');
+      }
+    });
+  }, { rootMargin: '-80px 0px -70% 0px' });
+  document.querySelectorAll('section.guide').forEach(function (s) { io.observe(s); });
+  document.getElementById('menu-btn').addEventListener('click', function () { document.body.classList.toggle('nav-open'); });
+  side.addEventListener('click', function (e) { if (e.target.tagName === 'A') document.body.classList.remove('nav-open'); });
+})();
+</script>
+</body>
+</html>
