@@ -55,12 +55,12 @@ Running everything:
 
 ### Layers
 
-| Layer | Role |
-|---|---|
+| Layer           | Role                             |
+| --------------- | -------------------------------- |
 | `integrations/` | Anti-corruption layer for Duffel |
-| `domain/` | Pure logic, no I/O |
-| `services/` | Orchestration |
-| `api/` | Thin FastAPI routers |
+| `domain/`       | Pure logic, no I/O               |
+| `services/`     | Orchestration                    |
+| `api/`          | Thin FastAPI routers             |
 
 `container.py` builds one frozen `Container` that the API and `worker.py` share. It holds:
 
@@ -148,12 +148,12 @@ There is no Alembic. `db.py` runs `create_all` and then the additive `ALTER` sta
 - **`App.tsx`** switches between the views `home`, `explore`, `matrix`, and `board`.
 - **Client preferences** live in `useSyncExternalStore` stores backed by localStorage or sessionStorage. Modules that touch storage at import time must guard with a `hasDom` check, because vitest runs in node.
 
-| Preference | Module |
-|---|---|
-| Language | `i18n/i18n.ts` |
-| Currency | `lib/currency.ts` |
+| Preference | Module               |
+| ---------- | -------------------- |
+| Language   | `i18n/i18n.ts`       |
+| Currency   | `lib/currency.ts`    |
 | Duffel key | `lib/credentials.ts` |
-| User ID | `lib/user.ts` |
+| User ID    | `lib/user.ts`        |
 
 - **Server data** goes through TanStack Query. `lib/api.ts` adds the `Accept-Language`, `X-User-Id`, and `X-Duffel-Token` headers.
 
@@ -167,12 +167,12 @@ There is no Alembic. `db.py` runs `create_all` and then the additive `ALTER` sta
 
 These are shadcn/ui-style components built on Radix and cmdk, styled in `shadcn.css` with project tokens. There is no Tailwind.
 
-| Component | Built on |
-|---|---|
-| `Select` | Radix Select |
-| `Checkbox` | Radix Checkbox |
+| Component       | Built on                              |
+| --------------- | ------------------------------------- |
+| `Select`        | Radix Select                          |
+| `Checkbox`      | Radix Checkbox                        |
 | `ConfirmDialog` | Radix AlertDialog, via `useConfirm()` |
-| `AirportInput` | Radix Popover + cmdk Command |
+| `AirportInput`  | Radix Popover + cmdk Command          |
 
 Don't reintroduce native `<select>`, `<datalist>`, checkboxes, or `confirm()`.
 
