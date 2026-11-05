@@ -275,6 +275,17 @@ export interface PatrolReport {
 export interface AppConfig {
   has_server_key: boolean;
   can_store_user_key: boolean;
+  /** 有值代表伺服器已啟用 Google 登入 */
+  google_client_id?: string | null;
+}
+
+/** 以 Google 登入的帳號；金鑰只回遮罩與模式 */
+export interface Account {
+  email: string;
+  name: string | null;
+  picture: string | null;
+  key_mask: string | null;
+  key_mode: "test" | "live" | null;
 }
 
 export interface CredentialCheck {

@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     # 用來加密使用者金鑰（供背景巡檢）；更換後先前保存的金鑰將無法解密
     secret_key: SecretStr | None = None  # 設定後手動觸發巡檢需帶 X-Admin-Token
 
+    # --- Google 登入 ---
+    # 設定後啟用「以 Google 帳號登入」，看盤清單與金鑰改為依帳號分開；未設定則維持匿名模式
+    google_client_id: str | None = None
+    # 正式環境（HTTPS）必須為 true；本機 http://localhost 開發可設為 false
+    session_cookie_secure: bool = True
+    session_ttl_days: int = Field(default=30, ge=1, le=365)
+
     # --- 告警 ---
     alert_cooldown_hours: int = 24
     webhook_allowed_hosts: list[str] = [

@@ -3,6 +3,7 @@ import { getKey } from "./credentials.ts";
 import { getCurrency } from "./currency.ts";
 import { readNdjson } from "./ndjson.ts";
 import type {
+  Account,
   AlertRecord,
   Airport,
   ApiEnvelope,
@@ -21,8 +22,13 @@ import type {
 } from "./types.ts";
 import { getUserId } from "./user.ts";
 
-/** 後端以 meta.code 標示需要使用者處理金鑰的錯誤 */
-export type ApiErrorCode = "missing_api_key" | "invalid_api_key" | null;
+/** 後端以 meta.code 標示需要使用者處理的錯誤（設定金鑰或登入） */
+export type ApiErrorCode =
+  | "missing_api_key"
+  | "invalid_api_key"
+  | "login_required"
+  | "login_failed"
+  | null;
 
 export class ApiError extends Error {
   readonly status: number;
@@ -35,7 +41,11 @@ export class ApiError extends Error {
   }
 
   get needsApiKey(): boolean {
-    return this.code !== null;
+    return this.code === "missing_api_key" || this.code === "invalid_api_key";
+  }
+
+  get needsLogin(): boolean {
+    return this.code === "login_required";
   }
 }
 
@@ -71,6 +81,23 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
 
 export const api = {
   config: () => request<AppConfig>("/api/config"),
+
+  /** 目前登入的帳號；未登入時為 null */
+  me: () => request<Account | null>("/api/auth/me"),
+
+  loginWithGoogle: (credential: string) =>
+    request<Account>("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ credential }),
+    }),
+
+  logout: () => request<null>("/api/auth/logout", { method: "POST" }),
+
+  /** 驗證後加密存入帳號；之後搜尋與背景巡檢都使用這把金鑰 */
+  saveAccountKey: (token: string) =>
+    request<Account>("/api/me/duffel-key", { method: "PUT", body: JSON.stringify({ token }) }),
+
+  clearAccountKey: () => request<Account>("/api/me/duffel-key", { method: "DELETE" }),
 
   verifyKey: (token: string) =>
     request<CredentialCheck>("/api/credentials/verify", { method: "POST" }, token),

@@ -16,6 +16,7 @@ async def app_config(container: ContainerDep) -> ApiResponse[AppConfig]:
         data=AppConfig(
             has_server_key=container.gateway.has_server_token,
             can_store_user_key=container.cipher.available,
+            google_client_id=container.auth.client_id if container.auth.enabled else None,
         )
     )
 

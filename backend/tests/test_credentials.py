@@ -93,7 +93,11 @@ def auth_of(route: respx.Route, index: int = -1) -> str:
 class TestCredentialApi:
     async def test_config_reports_capabilities(self, client: httpx.AsyncClient) -> None:
         data = (await client.get("/api/config")).json()["data"]
-        assert data == {"has_server_key": True, "can_store_user_key": True}
+        assert data == {
+            "has_server_key": True,
+            "can_store_user_key": True,
+            "google_client_id": None,
+        }
 
     @respx.mock
     async def test_verify_valid_and_rejected_keys(self, client: httpx.AsyncClient) -> None:

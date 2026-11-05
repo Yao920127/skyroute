@@ -122,6 +122,15 @@ The fare matrix streams NDJSON:
 - A Redis lock (`skyroute:lock:patrol`) ensures only one patrol runs at a time.
 - User Duffel keys are stored Fernet-encrypted in `tracked_watchlists.duffel_token_enc`. The encryption key is derived from `SECRET_KEY`.
 
+### Google sign-in and accounts
+
+`services/auth.py`, `api/auth.py`. The feature is enabled only when both `GOOGLE_CLIENT_ID` and `SECRET_KEY` are set; otherwise the app stays in anonymous mode (`X-User-Id`).
+
+- The frontend gets a Google ID token from Google Identity Services. `POST /api/auth/google` verifies it against Google's JWKS (aud, iss, exp, `email_verified`) and sets the `skyroute_session` cookie: stateless, HMAC-signed, HttpOnly, SameSite=Lax. Local http dev needs `SESSION_COOKIE_SECURE=false`.
+- Watchlist ownership is `user_identifier = "g:<user uuid>"`. When sign-in is enabled, watchlist endpoints require a session and otherwise return 401 with `meta.code = "login_required"`. Signing in moves the browser's anonymous watchlists (`X-User-Id`) into the account.
+- Duffel key resolution in `api/deps.py:get_user_token`: the `X-Duffel-Token` header, then the account key (Fernet-encrypted in `users.duffel_token_enc`), then the server default. Changing the account key also rewrites the key on that user's active watches, so patrol follows it.
+- The nginx CSP in `deploy/security-headers.conf` allowlists `accounts.google.com/gsi` and `*.googleusercontent.com` (avatars).
+
 ### Database schema
 
 There is no Alembic. `db.py` runs `create_all` and then the additive `ALTER` statements in `_ADDITIVE_MIGRATIONS`, all under `pg_advisory_xact_lock`. To add a column, add it to `models.py` and append an `ALTER TABLE … ADD COLUMN IF NOT EXISTS` to `_ADDITIVE_MIGRATIONS`.

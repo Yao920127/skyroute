@@ -9,6 +9,7 @@ from app.config import Settings
 from app.db import SessionFactory, create_engine, create_session_factory
 from app.integrations.duffel_client import DuffelClient, DuffelGateway
 from app.services.alerts import Notifier
+from app.services.auth import AuthService, GoogleVerifier, SessionSigner
 from app.services.cache import Cache, create_cache
 from app.services.credentials import TokenCipher
 from app.services.fx import FxService
@@ -29,6 +30,7 @@ class Container:
     search: SearchService
     fx: FxService
     notifier: Notifier
+    auth: AuthService
 
     def patrol_context(self) -> PatrolContext:
         return PatrolContext(
@@ -65,6 +67,14 @@ def build_container(settings: Settings, cache: Cache | None = None) -> Container
         settings.duffel_supplier_timeout_ms,
     )
     webhook_http = httpx.AsyncClient(follow_redirects=False)
+    secret = _secret(settings.secret_key)
+    client_id = settings.google_client_id
+    auth = AuthService(
+        verifier=GoogleVerifier(webhook_http, client_id) if client_id and secret else None,
+        signer=SessionSigner(secret, settings.session_ttl_days * 86_400) if secret else None,
+        client_id=client_id if secret else None,
+        cookie_secure=settings.session_cookie_secure,
+    )
     return Container(
         settings=settings,
         engine=engine,
@@ -81,4 +91,5 @@ def build_container(settings: Settings, cache: Cache | None = None) -> Container
         ),
         fx=FxService(webhook_http, cache, settings.fx_source_url, settings.fx_ttl_s),
         notifier=Notifier(webhook_http, settings.webhook_allowed_hosts),
+        auth=auth,
     )

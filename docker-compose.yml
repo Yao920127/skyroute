@@ -7,6 +7,9 @@ x-backend-env: &backend-env
   SECRET_KEY: ${SECRET_KEY:?請在 .env 設定 SECRET_KEY（用來加密使用者的 Duffel 金鑰）}
   CORS_ORIGINS: '["http://localhost:8080"]'
   ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  # compose 版以 http://localhost:8080 提供服務，Cookie 不能要求 HTTPS
+  SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
   PATROL_DAILY_AT: ${PATROL_DAILY_AT:-03:00}
   PATROL_TIMEZONE: ${PATROL_TIMEZONE:-Asia/Taipei}
 

@@ -33,6 +33,11 @@ _EXACT: dict[str, str] = {
         "Duffel rejected the current API key; please check it"
     ),
     "缺少或無效的 X-User-Id 標頭": "Missing or invalid X-User-Id header",
+    "請先以 Google 帳號登入": "Please sign in with Google first",
+    "此伺服器未啟用 Google 登入": "Google sign-in is not enabled on this server",
+    "無法驗證 Google 登入憑證": "Could not verify the Google sign-in credential",
+    "Google 登入憑證無效或已過期": "The Google sign-in credential is invalid or expired",
+    "Google 帳號的電子郵件尚未驗證": "This Google account's email address is not verified",
     "請在 X-Duffel-Token 標頭提供金鑰": "Provide a key in the X-Duffel-Token header",
     "需要有效的 X-Admin-Token": "A valid X-Admin-Token is required",
     "無法連線到外部航班服務": "Cannot reach the flight data provider",

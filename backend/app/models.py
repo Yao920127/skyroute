@@ -1,4 +1,4 @@
-"""實體資料模型：airports、tracked_watchlists、price_history、alert_history。"""
+"""實體資料模型：airports、users、tracked_watchlists、price_history、alert_history。"""
 
 import uuid
 from datetime import date, datetime
@@ -41,6 +41,22 @@ class Airport(Base):
     timezone: Mapped[str | None] = mapped_column(String(50))
     # airport：實體機場；city：城市聚合代碼（如 TYO → HND/NRT）
     kind: Mapped[str] = mapped_column(String(10), default="airport", server_default="airport")
+
+
+class User(Base):
+    """以 Google 帳號登入的使用者；帳號專屬的 Duffel 金鑰以 SECRET_KEY 加密保存。"""
+
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    google_sub: Mapped[str] = mapped_column(String(255), unique=True)
+    email: Mapped[str] = mapped_column(String(320))
+    name: Mapped[str | None] = mapped_column(String(200))
+    picture: Mapped[str | None] = mapped_column(String(500))
+    duffel_token_enc: Mapped[str | None] = mapped_column(Text)
+    token_fingerprint: Mapped[str | None] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class TrackedWatchlist(Base):

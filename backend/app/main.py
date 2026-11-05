@@ -9,13 +9,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 
-from app.api import credentials, explore, watchlists
+from app.api import auth, credentials, explore, watchlists
 from app.config import Settings, get_settings
 from app.container import Container, build_container
 from app.db import init_schema
 from app.i18n import language_of, translate
 from app.integrations.duffel_client import DuffelError, MissingCredentialsError
 from app.services.airport_service import seed_airports
+from app.services.auth import AuthError, LoginRequired
 from app.services.watchlist_service import NotFoundError, ValidationFailed
 
 log = logging.getLogger(__name__)
@@ -56,6 +57,14 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(ValidationFailed)
     async def _invalid(request: Request, exc: ValidationFailed) -> JSONResponse:
         return _error(request, 422, str(exc))
+
+    @app.exception_handler(LoginRequired)
+    async def _login_required(request: Request, exc: LoginRequired) -> JSONResponse:
+        return _error(request, 401, str(exc), {"code": "login_required"})
+
+    @app.exception_handler(AuthError)
+    async def _auth_failed(request: Request, exc: AuthError) -> JSONResponse:
+        return _error(request, 401, str(exc), {"code": "login_failed"})
 
     @app.exception_handler(MissingCredentialsError)
     async def _missing_key(request: Request, exc: MissingCredentialsError) -> JSONResponse:
@@ -115,6 +124,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
     app.include_router(explore.router)
     app.include_router(watchlists.router)
     app.include_router(credentials.router)
+    app.include_router(auth.router)
 
     @app.get("/", include_in_schema=False)
     async def root() -> RedirectResponse:

@@ -5,6 +5,7 @@ import type { View } from "../../hooks/useUrlState.ts";
 import { setLang, useI18n, type Lang } from "../../i18n/i18n.ts";
 import type { MessageKey } from "../../i18n/messages.ts";
 import { CURRENCIES, setCurrency, useCurrency, type Currency } from "../../lib/currency.ts";
+import { AccountMenu } from "../auth/AccountMenu.tsx";
 import { Select } from "../ui/Select.tsx";
 
 const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: c }));
@@ -141,6 +142,7 @@ export function Navbar({ view, trackingCount, keyLabel, keyTone, onNavigate, onO
             <i aria-hidden="true" />
             <span className="mono">{keyLabel}</span>
           </button>
+          <AccountMenu onOpenKey={onOpenKey} />
           <button
             type="button"
             className="navbar__menu-btn"

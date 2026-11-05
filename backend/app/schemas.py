@@ -319,6 +319,25 @@ class DeletedCount(BaseModel):
 class AppConfig(BaseModel):
     has_server_key: bool
     can_store_user_key: bool
+    # 有值代表已啟用 Google 登入（前端用來載入登入按鈕）
+    google_client_id: str | None = None
+
+
+class GoogleLogin(BaseModel):
+    credential: str = Field(min_length=20, max_length=4096)
+
+
+class AccountKeyIn(BaseModel):
+    token: str = Field(min_length=10, max_length=220)
+
+
+class AccountOut(BaseModel):
+    email: str
+    name: str | None
+    picture: str | None
+    # 帳號的 Duffel 金鑰：只回遮罩與模式，不回傳金鑰本身
+    key_mask: str | None = None
+    key_mode: Literal["test", "live"] | None = None
 
 
 class CredentialCheck(BaseModel):

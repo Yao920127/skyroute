@@ -10,15 +10,18 @@ import { WatchCard } from "./WatchCard.tsx";
 import { Sheet } from "../ui/Sheet.tsx";
 import { WatchDetail } from "./WatchDetail.tsx";
 import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
+import { LoginPrompt } from "../auth/LoginPrompt.tsx";
 
 type Props = {
   query: UseQueryResult<Watchlist[]>;
+  /** 已啟用 Google 登入但尚未登入：清單依帳號保存，先請使用者登入 */
+  needsLogin: boolean;
   onCreate: () => void;
 };
 
 const STATUS_ORDER = { TRACKING: 0, EXPIRED: 1, CANCELLED: 2 } as const;
 
-export function Watchboard({ query, onCreate }: Props) {
+export function Watchboard({ query, needsLogin, onCreate }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const isCompact = useIsCompact();
   const { t } = useI18n();
@@ -93,6 +96,7 @@ export function Watchboard({ query, onCreate }: Props) {
         </div>
       </header>
 
+      {needsLogin && <LoginPrompt />}
       {patrol.data && <PatrolSummary report={patrol.data} />}
       {patrol.isError && (
         <p className="notice" role="alert">
@@ -106,7 +110,7 @@ export function Watchboard({ query, onCreate }: Props) {
         </p>
       )}
 
-      {query.isSuccess && items.length === 0 ? (
+      {needsLogin ? null : query.isSuccess && items.length === 0 ? (
         <div className="empty">
           <p>{t("board.empty")}</p>
           <p>{t("board.emptyHint")}</p>

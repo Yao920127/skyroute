@@ -1,0 +1,166 @@
+/* Google 登入：登入視窗、導覽列帳號入口、未登入提示 */
+
+.login {
+  display: grid;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-md);
+}
+
+.login__lead {
+  margin: 0;
+  color: var(--body-muted);
+  line-height: 1.6;
+}
+
+.login__points {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--body-muted);
+  font-size: var(--text-caption);
+  line-height: 1.55;
+}
+
+.login__button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.login__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  text-align: center;
+}
+
+.account__signin {
+  min-height: 36px;
+  padding: 0 var(--space-lg);
+  white-space: nowrap;
+}
+
+.account__avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-full);
+  background: var(--deep-green);
+  color: var(--on-dark);
+  font-family: var(--font-display);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.account__avatar:hover,
+.account__avatar[data-state="open"] {
+  border-color: var(--primary);
+}
+
+.account__avatar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.16);
+}
+
+.account__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account__menu {
+  display: grid;
+  width: min(280px, calc(100vw - 24px));
+  padding: 4px;
+}
+
+.account__who {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+  min-width: 0;
+}
+
+.account__who strong,
+.account__who span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account__who span {
+  color: var(--muted);
+  font-size: var(--text-micro);
+}
+
+.account__key {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-md) var(--space-sm);
+  font-size: var(--text-micro);
+}
+
+.account__item {
+  min-height: 36px;
+  padding: 0 var(--space-sm);
+  border: none;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-size: var(--text-caption);
+  text-align: left;
+  cursor: pointer;
+}
+
+.account__item:hover,
+.account__item:focus-visible {
+  outline: none;
+  background: var(--soft-stone);
+}
+
+.account__item--danger {
+  color: var(--error);
+}
+
+.login-prompt {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-md);
+  padding: var(--space-3xl) var(--space-xl);
+  border-radius: var(--radius-lg);
+  background: var(--soft-stone);
+  text-align: center;
+}
+
+.login-prompt h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-feature);
+  font-weight: 400;
+}
+
+.login-prompt p {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--body-muted);
+  line-height: 1.6;
+}
+
+@media (pointer: coarse) {
+  .account__avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .account__item {
+    min-height: 44px;
+  }
+}
