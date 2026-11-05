@@ -17,5 +17,5 @@ COPY deploy/nginx.conf /etc/nginx/templates/default.conf.template
 COPY deploy/security-headers.conf /etc/nginx/snippets/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 # 本機 docker compose 用預設值；Railway 會注入 PORT，並以 API_UPSTREAM 指向 api 的私有網域
-ENV PORT=80 API_UPSTREAM=api:8000 REAL_IP_FROM=127.0.0.1
+ENV PORT=80 API_UPSTREAM=api:8000 REAL_IP_FROM=127.0.0.1 NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
 EXPOSE 80
