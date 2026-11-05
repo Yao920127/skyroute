@@ -155,7 +155,8 @@
 
 .offer {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr) 150px auto;
+  /* 票價欄依內容加寬（CN¥1,176.77、₩1,234,567 這類較長的金額），由中間的航段欄讓出空間 */
+  grid-template-columns: 180px minmax(0, 1fr) minmax(150px, max-content) auto;
   gap: var(--space-xl);
   align-items: center;
   padding: var(--space-xl) var(--space-md);
@@ -338,6 +339,13 @@
   font-family: var(--font-display);
   font-size: 32px;
   letter-spacing: -0.02em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.offer__original,
+.offer__cost {
+  white-space: nowrap;
 }
 
 .offer__currency {
