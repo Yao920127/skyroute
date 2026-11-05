@@ -124,13 +124,13 @@ The fare matrix streams NDJSON:
 
 ### Airports, fake-offer filter, multi-leg watches
 
-- **Airports** (`services/airport_service.py`): seeded from three files, in order of precedence:
-  - `data/airports.json`: curated, with city codes and timezones.
-  - `data/airports_zh.json`: Traditional Chinese names.
-  - `data/airports_world.json`: about 4,000 airports from OurAirports, regenerated with `scripts/build_airports.py`.
-
-  Search matches the accent-folded `search_text`. When nothing matches locally, `/api/airports` asks Duffel `/places/suggestions` and stores the results; misses are cached for a day. Tests call `seed_airports(..., include_world=False)` for speed.
-
+- **Airports** (`services/airport_service.py`): one data file, `data/airports.json`, with one airport per line.
+  - It holds about 4,000 scheduled-service airports from OurAirports. Update it with `scripts/build_airports.py <airports.csv>`.
+  - `size_rank: 0` rows are hand-curated: city codes, timezones, and metro groups like `TYO` and `BJS`. The build script never overwrites them. It also keeps existing `name_zh`, `timezone`, and `city_code` values.
+  - Edit `name_zh` directly in the file to add Chinese names.
+  - Search matches the accent-folded `search_text`.
+  - When nothing matches locally, `/api/airports` asks Duffel `/places/suggestions` and stores the results. Misses are cached for a day.
+  - Tests call `seed_airports(..., include_world=False)`, which seeds only the curated rows, for speed.
 - **Fake-offer filter** (`services/plausibility.py`): applied in `SearchService.fetch`, including on cache hits. It drops **simulated** offers that have a segment where neither the marketing nor the operating carrier's home country (or region: Europe, US plus territories) is at either end. Live offers, codeshares, and unknown airlines are kept.
 - **Multi-leg watches**:
   - `ticket_mode="ticket"` is one Duffel query; it can include `extra_legs` for multi-city.

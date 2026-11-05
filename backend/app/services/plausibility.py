@@ -249,9 +249,8 @@ def region_of(country: str) -> str:
 def airport_countries() -> dict[str, str]:
     """機場代碼 → 國家，取自內建的全球機場資料（不需查資料庫）。"""
     mapping: dict[str, str] = {}
-    for name in ("airports_world.json", "airports.json"):
-        for row in json.loads((DATA_DIR / name).read_text(encoding="utf-8")):
-            mapping[row["iata_code"]] = row["country"]
+    for row in json.loads((DATA_DIR / "airports.json").read_text(encoding="utf-8")):
+        mapping[row["iata_code"]] = row["country"]
     return mapping
 
 

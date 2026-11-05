@@ -1,9 +1,9 @@
 """機場對照：全球機場資料、城市代碼聚合（TYO → HND/NRT）、搜尋建議、缺漏時向 Duffel 補齊。
 
-資料來源（後者覆寫前者）：
-1. airports_world.json：OurAirports 全球有定期航班的機場（scripts/build_airports.py 產生）
-2. airports_zh.json：常用機場的繁體中文名稱
-3. airports.json：內建常用城市與機場（含城市代碼、時區），優先權最高
+資料來源只有一個檔案 data/airports.json（每行一個機場）：
+- 約 4,000 個有定期航班的機場來自 OurAirports，以 scripts/build_airports.py 更新
+- size_rank＝0 是人工維護的常用城市與機場（含城市代碼、時區），更新時不會被覆寫
+- name_zh 是繁體中文名稱，直接在檔案裡編輯即可
 """
 
 import json
@@ -22,13 +22,10 @@ from app.models import Airport
 
 log = logging.getLogger(__name__)
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-WORLD_FILE = DATA_DIR / "airports_world.json"
-ZH_FILE = DATA_DIR / "airports_zh.json"
-CURATED_FILE = DATA_DIR / "airports.json"
-SEED_FILE = CURATED_FILE  # 相容舊名稱
+DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "airports.json"
 SEED_BATCH = 1000  # asyncpg 單一語句的參數上限約 32k，分批寫入
 SEARCH_LIMIT = 12
+CURATED_RANK = 0  # 人工維護的常用城市與機場
 COLUMNS = (
     "city_code",
     "name_zh",
@@ -60,20 +57,11 @@ def search_text_of(row: dict[str, Any]) -> str:
 
 
 def load_seed_rows(include_world: bool = True) -> list[dict[str, Any]]:
-    """合併三份資料；內建清單優先，中文名稱補在全球資料上。"""
-    rows: dict[str, dict[str, Any]] = {}
-    world = json.loads(WORLD_FILE.read_text(encoding="utf-8")) if include_world else []
-    for r in world:
-        rows[r["iata_code"]] = {"name_zh": None, "timezone": None, **r}
-    for code, name_zh in json.loads(ZH_FILE.read_text(encoding="utf-8")).items():
-        if code in rows:
-            rows[code]["name_zh"] = name_zh
-    for r in json.loads(CURATED_FILE.read_text(encoding="utf-8")):
-        base = rows.get(r["iata_code"], {"city_name": None})
-        rows[r["iata_code"]] = {**base, **r, "size_rank": 0}
-    for row in rows.values():
-        row["search_text"] = search_text_of(row)
-    return list(rows.values())
+    """讀取機場檔；include_world=False 只取人工維護的常用清單（測試用）。"""
+    rows: list[dict[str, Any]] = json.loads(DATA_FILE.read_text(encoding="utf-8"))
+    if not include_world:
+        rows = [r for r in rows if r["size_rank"] == CURATED_RANK]
+    return [{**r, "search_text": search_text_of(r)} for r in rows]
 
 
 async def _upsert(session: AsyncSession, rows: list[dict[str, Any]]) -> None:
