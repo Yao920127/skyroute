@@ -1,6 +1,7 @@
 /** 目標價的快速設定：以「目前價格」為基準往下打折 */
 
-export const TARGET_DROP_PRESETS = [10, 20, 30] as const;
+/** 依跌幅快速設定：比目前價格低 5%～50% */
+export const TARGET_DROP_PRESETS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50] as const;
 
 /** 目前價格降 pct% 後的目標價（無條件捨去到整數，避免出現 .99 這類難讀的數字） */
 export function discountedPrice(base: number, pct: number): number {

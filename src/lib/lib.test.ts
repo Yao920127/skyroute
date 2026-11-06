@@ -367,6 +367,7 @@ describe("target price presets", () => {
   it("discounts from the current price", () => {
     expect(discountedPrice(36320, 20)).toBe(29056);
     expect(discountedPrice(199.99, 10)).toBe(179);
+    expect(discountedPrice(36320, 50)).toBe(18160);
   });
 
   it("reports how far below the current price a target is", () => {

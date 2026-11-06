@@ -637,29 +637,19 @@
   overflow-wrap: anywhere;
 }
 
-/* 目標價快捷鍵：比目前價格低 10／20／30% */
+/* 目標價：依跌幅（5%～50%）快速設定，或直接輸入自訂金額 */
 .target-presets {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-xs);
-  margin-top: var(--space-xs);
+  gap: var(--space-sm);
 }
 
-.target-presets .chip {
-  min-height: 28px;
-  padding: 0 10px;
-  font-family: var(--font-mono);
-  font-size: var(--text-micro);
+.target-presets__select {
+  min-width: 0;
 }
 
 .target-presets__hint {
   color: var(--deep-green);
   font-size: var(--text-micro);
-}
-
-.target-presets .chip[aria-pressed="true"] {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: var(--on-dark);
 }

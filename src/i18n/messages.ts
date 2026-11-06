@@ -41,6 +41,9 @@ export const zh = {
   "schedule.ownKeyOnly": "需自己的金鑰",
   "watch.interval": "巡檢頻率",
   "watch.belowNow": "比目前價格低 {n}%",
+  "watch.byDrop": "依跌幅設定目標價",
+  "watch.dropPreset": "比目前價格低 {n}%",
+  "watch.customTarget": "自訂金額",
   "watch.intervalHint":
     "30 分鐘以內的頻率需要使用自己的 Duffel 金鑰（使用自己的額度，不佔網站共用額度）。",
   "card.nextCheck": "下次巡檢：{time}",
@@ -537,6 +540,9 @@ export const en: Record<MessageKey, string> = {
   "schedule.ownKeyOnly": "Own key only",
   "watch.interval": "Check frequency",
   "watch.belowNow": "{n}% below the current price",
+  "watch.byDrop": "Set target by drop",
+  "watch.dropPreset": "{n}% below current",
+  "watch.customTarget": "Custom amount",
   "watch.intervalHint":
     "Checking more often than every 30 minutes requires your own Duffel key (it uses your own quota, not the site's shared one).",
   "card.nextCheck": "Next check: {time}",

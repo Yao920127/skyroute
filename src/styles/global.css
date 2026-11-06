@@ -79,6 +79,8 @@ button {
 
 .field {
   display: grid;
+  /* 同一列的欄位高度不同時（例如一邊多了說明），不要把輸入框撐高 */
+  align-content: start;
   gap: var(--space-xs);
 }
 
