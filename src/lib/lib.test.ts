@@ -26,6 +26,7 @@ import {
 } from "./searchState.ts";
 import { intervalKey, isIntervalAllowed, nextCheckLabel, parseIntervalKey } from "./schedule.ts";
 import { sparklinePath } from "./sparkline.ts";
+import { discountedPrice, percentBelow } from "./targetPrice.ts";
 import { cheapestChain, connects, earliestDeparture } from "./splitPlan.ts";
 import { legAirlinesText, routeText, watchLegs } from "./watchRoute.ts";
 import { stopAirports, stopsText } from "./stops.ts";
@@ -359,5 +360,19 @@ describe("split ticket connections", () => {
     expect(cheapestChain([[toCts], [backEarly, backOk]])?.map((x) => x.id)).toEqual(["a", "c"]);
     expect(cheapestChain([[toCts], [backEarly, backOk]], [undefined, "b"])).toBeNull();
     expect(cheapestChain([[toCts], [backEarly]])).toBeNull();
+  });
+});
+
+describe("target price presets", () => {
+  it("discounts from the current price", () => {
+    expect(discountedPrice(36320, 20)).toBe(29056);
+    expect(discountedPrice(199.99, 10)).toBe(179);
+  });
+
+  it("reports how far below the current price a target is", () => {
+    expect(percentBelow(36320, "29056")).toBe(20);
+    expect(percentBelow(36320, "40000")).toBeNull();
+    expect(percentBelow(null, "100")).toBeNull();
+    expect(percentBelow(36320, "")).toBeNull();
   });
 });

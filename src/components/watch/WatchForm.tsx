@@ -14,6 +14,7 @@ import { ApiErrorNotice } from "../settings/ApiErrorNotice.tsx";
 import { Select } from "../ui/Select.tsx";
 import { PortalContainerContext } from "../ui/portal.ts";
 import { IntervalSelect } from "./IntervalSelect.tsx";
+import { TargetPresets } from "./TargetPresets.tsx";
 
 export type WatchDraft = {
   trip: SearchState;
@@ -212,6 +213,11 @@ export function WatchForm({ draft, onClose, onCreated }: Props) {
                 step="0.01"
                 value={form.targetPrice}
                 onChange={(e) => set("targetPrice", e.target.value)}
+              />
+              <TargetPresets
+                base={draft.price ?? null}
+                value={form.targetPrice}
+                onPick={(v) => set("targetPrice", v)}
               />
             </label>
             <label className="field">

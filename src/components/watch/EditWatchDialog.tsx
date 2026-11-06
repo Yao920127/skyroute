@@ -6,6 +6,7 @@ import { api } from "../../lib/api.ts";
 import type { Watchlist, WatchlistUpdate } from "../../lib/types.ts";
 import { Sheet } from "../ui/Sheet.tsx";
 import { IntervalSelect } from "./IntervalSelect.tsx";
+import { TargetPresets } from "./TargetPresets.tsx";
 
 type Props = {
   watch: Watchlist;
@@ -96,6 +97,11 @@ export function EditWatchDialog({ watch, onClose }: Props) {
               step="0.01"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
+            />
+            <TargetPresets
+              base={watch.stats.latest_price ? Number(watch.stats.latest_price) : null}
+              value={target}
+              onPick={setTarget}
             />
           </label>
           <label className="field">
