@@ -4,7 +4,7 @@
 
 - **後端**：FastAPI · SQLAlchemy 2（async/asyncpg）· PostgreSQL · Redis · httpx
 - **前端**：React 19 · TanStack Query · liveline（走勢圖）· Vite+
-- **外部報價**：[Duffel Flights API](https://duffel.com/docs)（呼叫方式整理於 [apidocs.html](apidocs.html)）
+- **外部報價**：[Duffel Flights API](https://duffel.com/docs)（呼叫方式整理於 [public/apidocs.html](public/apidocs.html)，線上版在 `/apidocs`）
 
 ## 快速開始
 

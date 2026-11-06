@@ -12,10 +12,17 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
   },
   fmt: {
-    ignorePatterns: ["backend/**", "dist/**", "apidocs.html", "project.md", "DESIGN.md", "*.lock"],
+    ignorePatterns: [
+      "backend/**",
+      "dist/**",
+      "public/apidocs*",
+      "project.md",
+      "DESIGN.md",
+      "*.lock",
+    ],
   },
   lint: {
-    ignorePatterns: ["backend/**", "dist/**"],
+    ignorePatterns: ["backend/**", "dist/**", "public/apidocs*"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },

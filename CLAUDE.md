@@ -11,7 +11,7 @@ SkyRoute is a flight-fare explorer and price-watch board. It has three parts:
 Reference documents:
 
 - The spec is `project.md`.
-- How Duffel calls are made is in `apidocs.html`.
+- How Duffel calls are made is in `public/apidocs.html`, served online at `/apidocs` (scripts live in `public/apidocs*.js` because the CSP forbids inline scripts).
 - The visual design system is `DESIGN.md`.
 
 User-facing text, comments, and docs are in Traditional Chinese (Taiwan).
@@ -29,7 +29,7 @@ vp test -t "formats durations"  # single test by name
 vp run build               # tsc + production build
 ```
 
-`vp check --fix` reformats Markdown. `DESIGN.md`, `project.md`, and `apidocs.html` are excluded through `fmt.ignorePatterns` in `vite.config.ts`. Keep them excluded so the formatter doesn't rewrite them.
+`vp check --fix` reformats Markdown. `DESIGN.md`, `project.md`, and `public/apidocs*` are excluded through `fmt.ignorePatterns` in `vite.config.ts`. Keep them excluded so the formatter doesn't rewrite them.
 
 Backend commands, run from `backend/` with uv and Python 3.12:
 
