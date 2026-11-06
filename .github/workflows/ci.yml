@@ -5,9 +5,12 @@ on:
   push:
     branches: [main]
 
+# main：每個提交各自一組、互不取消。Railway 要等該提交的 CI 通過才部署，
+# 被取消的提交會被跳過，連續推送時前端改版就可能一直沒部署。
+# PR：同一分支的新推送取消舊的檢查，節省執行時間。
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   backend:
