@@ -49,6 +49,23 @@
   border-color: var(--hairline);
 }
 
+.navbar__tab--external {
+  text-decoration: none;
+}
+
+.navbar__ext-short {
+  display: none;
+}
+
+.navbar__ext-arrow {
+  font-size: var(--text-micro);
+  transition: transform var(--duration-fast);
+}
+
+.navbar__tab--external:hover .navbar__ext-arrow {
+  transform: translate(2px, -2px);
+}
+
 .navbar__tab[aria-current="page"] {
   background: var(--primary);
   border-color: var(--primary);
@@ -191,6 +208,11 @@
   text-align: left;
 }
 
+.navbar__menu-item--external {
+  color: inherit;
+  text-decoration: none;
+}
+
 .navbar__menu-item:last-child {
   border-bottom: none;
 }
@@ -236,6 +258,20 @@
     padding: 6px 12px;
   }
 
+  /* 外部連結縮成「API ↗」，完整名稱留給螢幕閱讀器 */
+  .navbar__ext-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .navbar__ext-short {
+    display: inline;
+  }
+
   /* 空間有限：金鑰按鈕只留狀態圓點（完整文字在 aria-label） */
   .navbar__end .keychip {
     width: 44px;
@@ -244,6 +280,13 @@
   }
 
   .navbar__end .keychip span {
+    display: none;
+  }
+}
+
+/* 窄平板：分頁列放不下外部連結，改由頁尾提供 */
+@media (max-width: 860px) {
+  .navbar__tab--external {
     display: none;
   }
 }

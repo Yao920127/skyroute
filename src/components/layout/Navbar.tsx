@@ -25,6 +25,9 @@ export const NAV_ITEMS: { id: Exclude<View, "home">; labelKey: MessageKey }[] = 
   { id: "board", labelKey: "nav.board" },
 ];
 
+/** Duffel 串接指南（public/apidocs.html），一律在新分頁開啟 */
+export const API_GUIDE_URL = "/apidocs";
+
 const LANGS: { id: Lang; label: string }[] = [
   { id: "zh", label: "中" },
   { id: "en", label: "EN" },
@@ -129,6 +132,21 @@ export function Navbar({ view, trackingCount, keyLabel, keyTone, onNavigate, onO
               {count(item.id)}
             </button>
           ))}
+          <a
+            className="navbar__tab navbar__tab--external"
+            href={API_GUIDE_URL}
+            target="_blank"
+            rel="noopener"
+          >
+            <span className="navbar__ext-full">{t("nav.apiGuide")}</span>
+            <span className="navbar__ext-short" aria-hidden="true">
+              API
+            </span>
+            <span className="navbar__ext-arrow" aria-hidden="true">
+              ↗
+            </span>
+            <span className="visually-hidden">{t("common.newTab")}</span>
+          </a>
         </nav>
 
         <div className="navbar__end">
@@ -181,6 +199,17 @@ export function Navbar({ view, trackingCount, keyLabel, keyTone, onNavigate, onO
                   </button>
                 ),
               )}
+              <a
+                className="navbar__menu-item navbar__menu-item--external"
+                href={API_GUIDE_URL}
+                target="_blank"
+                rel="noopener"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span>{t("nav.apiGuide")}</span>
+                <span aria-hidden="true">↗</span>
+                <span className="visually-hidden">{t("common.newTab")}</span>
+              </a>
             </nav>
             <div className="navbar__menu-prefs">
               <span className="label">{t("nav.settings")}</span>

@@ -1,6 +1,6 @@
 import type { View } from "../../hooks/useUrlState.ts";
 import { useI18n } from "../../i18n/i18n.ts";
-import { NAV_ITEMS } from "./Navbar.tsx";
+import { API_GUIDE_URL, NAV_ITEMS } from "./Navbar.tsx";
 
 type Props = {
   onNavigate: (view: View) => void;
@@ -39,6 +39,10 @@ export function Footer({ onNavigate, onOpenKey }: Props) {
             <button type="button" onClick={onOpenKey}>
               {t("footer.apiKey")}
             </button>
+            <a href={API_GUIDE_URL} target="_blank" rel="noopener">
+              {t("footer.apiGuide")}
+              <span className="visually-hidden">{t("common.newTab")}</span>
+            </a>
             <a href={DUFFEL_DOCS} target="_blank" rel="noopener noreferrer">
               {t("footer.docs")}
             </a>
