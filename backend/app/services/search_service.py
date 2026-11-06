@@ -12,7 +12,6 @@ from app.domain.offers import CabinClass, FlightOffer, Frozen
 from app.integrations.duffel_client import DuffelClient
 from app.integrations.duffel_mapper import map_offers
 from app.services.cache import Cache
-from app.services.plausibility import drop_obviously_fake
 
 log = logging.getLogger(__name__)
 
@@ -147,8 +146,7 @@ class SearchService:
                 try:
                     hit = CachedSearch.model_validate_json(cached)
                     return SearchOutcome(
-                        # 舊快取可能還留著虛構航班，讀出時也過濾一次
-                        offers=drop_obviously_fake(hit.offers),
+                        offers=hit.offers,
                         fetched_at=hit.fetched_at,
                         cache_hit=True,
                         cache_key=key,
@@ -160,10 +158,7 @@ class SearchService:
         raw = await client.create_offer_request(
             slices, passengers, query.cabin_class, query.max_connections
         )
-        mapped = tuple(dedupe_itineraries(map_offers(raw.get("offers") or [], self._excluded)))
-        offers = drop_obviously_fake(mapped)
-        if len(offers) < len(mapped):
-            log.info("剔除 %d 筆明顯虛構的模擬航班", len(mapped) - len(offers))
+        offers = tuple(dedupe_itineraries(map_offers(raw.get("offers") or [], self._excluded)))
         fetched_at = datetime.now(UTC)
         await self._cache.set(
             key, CachedSearch(offers=offers, fetched_at=fetched_at).model_dump_json(), self._ttl_s

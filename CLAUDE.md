@@ -123,7 +123,7 @@ The fare matrix streams NDJSON:
 - A Redis lock (`skyroute:lock:patrol`) ensures only one patrol runs at a time.
 - User Duffel keys are stored Fernet-encrypted in `tracked_watchlists.duffel_token_enc`. The encryption key is derived from `SECRET_KEY`.
 
-### Airports, fake-offer filter, multi-leg watches
+### Airports and multi-leg watches
 
 - **Airports** (`services/airport_service.py`): one data file, `data/airports.json`, with one airport per line.
   - It holds about 4,000 scheduled-service airports from OurAirports. Update it with `scripts/build_airports.py <airports.csv>`.
@@ -132,7 +132,6 @@ The fare matrix streams NDJSON:
   - Search matches the accent-folded `search_text`.
   - When nothing matches locally, `/api/airports` asks Duffel `/places/suggestions` and stores the results. Misses are cached for a day.
   - Tests call `seed_airports(..., include_world=False)`, which seeds only the curated rows, for speed.
-- **Fake-offer filter** (`services/plausibility.py`): applied in `SearchService.fetch`, including on cache hits. It drops **simulated** offers that have a segment where neither the marketing nor the operating carrier's home country (or region: Europe, US plus territories) is at either end. Live offers, codeshares, and unknown airlines are kept.
 - **Multi-leg watches**:
   - `ticket_mode="ticket"` is one Duffel query; it can include `extra_legs` for multi-city.
   - `ticket_mode="split"` makes one one-way query per leg, with optional `leg_airlines`, and records the summed price as `airline_code` like `CZ+BR`.
