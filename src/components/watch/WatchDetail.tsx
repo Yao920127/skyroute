@@ -10,6 +10,7 @@ import { routeText, watchLegs } from "../../lib/watchRoute.ts";
 import type { Watchlist } from "../../lib/types.ts";
 import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
 import { EditWatchDialog } from "./EditWatchDialog.tsx";
+import { LoadBoundary } from "../ui/LoadBoundary.tsx";
 
 // Recharts 體積較大，只在打開詳情時才載入
 const PriceChart = lazy(() => import("./PriceChart.tsx"));
@@ -180,13 +181,24 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
           <p className="empty">{t("detail.chartEmpty")}</p>
         )}
         {history.data && history.data.length >= 2 && (
-          <Suspense fallback={<div className="detail__chart-skeleton" />}>
-            <PriceChart
-              points={history.data}
-              targetPrice={watch.target_price ? Number(watch.target_price) : null}
-              weekAvg={watch.stats.week_avg ? Number(watch.stats.week_avg) : null}
-            />
-          </Suspense>
+          <LoadBoundary
+            fallback={
+              <p className="notice detail__chart-failed">
+                {t("detail.chartFailed")}{" "}
+                <button type="button" className="btn btn--ghost" onClick={() => location.reload()}>
+                  {t("common.reload")}
+                </button>
+              </p>
+            }
+          >
+            <Suspense fallback={<div className="detail__chart-skeleton" />}>
+              <PriceChart
+                points={history.data}
+                targetPrice={watch.target_price ? Number(watch.target_price) : null}
+                weekAvg={watch.stats.week_avg ? Number(watch.stats.week_avg) : null}
+              />
+            </Suspense>
+          </LoadBoundary>
         )}
       </div>
 

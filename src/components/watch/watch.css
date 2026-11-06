@@ -80,6 +80,32 @@
   align-content: start;
 }
 
+/*
+ * 電腦版：左側卡片清單與右側詳情等高，卡片多時在清單內捲動，不會把整頁越拉越長。
+ * contain: size 讓清單不參與列高計算，列高由右側詳情決定；清單再以 stretch 填滿並捲動。
+ */
+@media (min-width: 1025px) {
+  .board__layout {
+    align-items: stretch;
+  }
+
+  .board__lists {
+    contain: size;
+    min-height: 520px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* 預留捲軸與卡片外框、選取外框的空間 */
+    padding: 2px var(--space-sm) 2px 2px;
+    scrollbar-gutter: stable;
+  }
+
+  /* 詳情內容較少時也撐到與清單同高，兩欄底部對齊 */
+  .board__layout > .detail {
+    position: static;
+    align-content: start;
+  }
+}
+
 .board__group {
   display: flex;
   align-items: center;
