@@ -679,3 +679,9 @@
   color: var(--deep-green);
   font-size: var(--text-micro);
 }
+
+/* 走勢圖（liveline 會填滿父層，父層要給高度） */
+.price-chart {
+  height: 260px;
+  min-width: 0;
+}

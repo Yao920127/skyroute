@@ -1,108 +1,71 @@
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Liveline, type LivelinePoint } from "liveline";
+import { useMemo } from "react";
 
 import { useI18n } from "../../i18n/i18n.ts";
 import { formatPrice } from "../../lib/currency.ts";
-import { formatNumber } from "../../lib/format.ts";
 import type { PricePoint } from "../../lib/types.ts";
 
 type Props = {
   points: PricePoint[];
   targetPrice: number | null;
-  weekAvg: number | null;
 };
 
-const AXIS_STYLE = {
-  fontFamily: "IBM Plex Mono, monospace",
-  fontSize: 11,
-  fill: "#75758a",
-};
+// liveline 以 canvas 繪製，讀不到 CSS 變數；色碼對應 tokens.css 的 --gain
+const LINE_COLOR = "#0b7a5c";
+const MIN_WINDOW_S = 60 * 60;
+const WINDOW_PADDING = 1.04;
 
-function tick(iso: string): string {
-  const d = new Date(iso);
-  // 巡檢可以短到每 5 分鐘一次，只顯示到「時」會出現一排相同的標籤
+/** 「11/6 14:30」：巡檢可以短到每 5 分鐘一次，時間軸要到分鐘 */
+function timeLabel(unixSeconds: number): string {
+  const d = new Date(unixSeconds * 1000);
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${d.getMonth() + 1}/${d.getDate()} ${hh}:${mm}`;
 }
 
-// Recharts 的 SVG 屬性無法讀 CSS 變數，這裡的色碼對應 tokens.css
-/** 歷史票價折線圖：目標價（深綠虛線）與 7 日均價（灰虛線）作為參考。 */
-export default function PriceChart({ points, targetPrice, weekAvg }: Props) {
+/**
+ * 歷史票價走勢（liveline）：平滑曲線、不在每筆資料上畫點；目標價為參考線，滑過可看各時間點的價格。
+ * liveline 是即時圖表，橫軸終點是「現在」，最新價格會延伸到現在，代表目前的價格。
+ */
+export default function PriceChart({ points, targetPrice }: Props) {
   const { locale, t } = useI18n();
-  const data = points.map((p) => ({
-    t: p.recorded_at,
-    price: Number(p.price),
-    airline: p.airline_code,
-  }));
   const currency = points[0]?.currency ?? "";
-  const prices = data.map((d) => d.price);
-  const bounds = [...prices, targetPrice ?? prices[0]];
-  const min = Math.min(...bounds);
-  const max = Math.max(...bounds);
-  const pad = Math.max(1, (max - min) * 0.15);
+
+  const data = useMemo<LivelinePoint[]>(
+    () =>
+      points
+        .map((p) => ({ time: Date.parse(p.recorded_at) / 1000, value: Number(p.price) }))
+        .sort((a, b) => a.time - b.time),
+    [points],
+  );
+  const latest = data[data.length - 1]?.value ?? 0;
+  // 視窗涵蓋第一筆資料到現在，左右各留一點空間
+  const windowSecs = Math.max(
+    MIN_WINDOW_S,
+    (Date.now() / 1000 - (data[0]?.time ?? Date.now() / 1000)) * WINDOW_PADDING,
+  );
 
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <LineChart data={data} margin={{ top: 12, right: 32, bottom: 0, left: 0 }}>
-        <CartesianGrid stroke="#e5e7eb" strokeDasharray="2 4" vertical={false} />
-        <XAxis
-          dataKey="t"
-          tickFormatter={tick}
-          tick={AXIS_STYLE}
-          tickLine={false}
-          axisLine={false}
-          minTickGap={32}
-        />
-        <YAxis
-          domain={[Math.floor(min - pad), Math.ceil(max + pad)]}
-          tick={AXIS_STYLE}
-          tickLine={false}
-          axisLine={false}
-          width={56}
-          tickFormatter={(v: number) => formatNumber(v, locale)}
-        />
-        <Tooltip
-          formatter={(value) => [formatPrice(Number(value), currency, locale), t("chart.lowest")]}
-          labelFormatter={(label) =>
-            typeof label === "string"
-              ? new Date(label).toLocaleString(locale, { hour12: false })
-              : ""
-          }
-          contentStyle={{ borderRadius: 6, border: "1px solid #d9d9dd", fontSize: 12 }}
-        />
-        {targetPrice !== null && (
-          <ReferenceLine
-            y={targetPrice}
-            stroke="#003c33"
-            strokeDasharray="6 4"
-            label={{
-              value: t("chart.target"),
-              position: "insideTopLeft",
-              fontSize: 11,
-              fill: "#003c33",
-            }}
-          />
-        )}
-        {weekAvg !== null && <ReferenceLine y={weekAvg} stroke="#93939f" strokeDasharray="2 3" />}
-        <Line
-          type="monotone"
-          dataKey="price"
-          stroke="#17171c"
-          strokeWidth={1.5}
-          dot={{ r: 2.5, fill: "#ff7759", strokeWidth: 0 }}
-          activeDot={{ r: 5, fill: "#ff7759", stroke: "#17171c" }}
-          isAnimationActive={false}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="price-chart">
+      <Liveline
+        data={data}
+        value={latest}
+        theme="light"
+        color={LINE_COLOR}
+        window={windowSecs}
+        lineWidth={2}
+        grid
+        fill
+        badge
+        badgeVariant="minimal"
+        pulse={false}
+        momentum={false}
+        referenceLine={
+          targetPrice !== null ? { value: targetPrice, label: t("chart.target") } : undefined
+        }
+        formatValue={(v) => formatPrice(v, currency, locale)}
+        formatTime={timeLabel}
+      />
+    </div>
   );
 }

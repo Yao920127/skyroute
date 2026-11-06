@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 SkyRoute is a flight-fare explorer and price-watch board. It has three parts:
 
 - **Backend**: FastAPI, async SQLAlchemy 2 with asyncpg, PostgreSQL, and Redis or an in-memory cache.
-- **Frontend**: React 19, TanStack Query, and Recharts, built with Vite+.
+- **Frontend**: React 19, TanStack Query, and liveline (canvas price chart), built with Vite+.
 - **Fare data**: all prices come from the Duffel Flights API.
 
 Reference documents:

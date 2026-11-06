@@ -3,7 +3,7 @@
 把「金融看盤」機制套用到機票：即時多條件搜尋、彈性日期價格矩陣，以及背景 Worker 每日巡檢自選清單、寫入時間序列並在降價時推播。完整規格見 [project.md](project.md)。
 
 - **後端**：FastAPI · SQLAlchemy 2（async/asyncpg）· PostgreSQL · Redis · httpx
-- **前端**：React 19 · TanStack Query · Recharts · Vite+
+- **前端**：React 19 · TanStack Query · liveline（走勢圖）· Vite+
 - **外部報價**：[Duffel Flights API](https://duffel.com/docs)（呼叫方式整理於 [apidocs.html](apidocs.html)）
 
 ## 快速開始

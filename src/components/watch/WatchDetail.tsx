@@ -12,7 +12,7 @@ import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
 import { EditWatchDialog } from "./EditWatchDialog.tsx";
 import { LoadBoundary } from "../ui/LoadBoundary.tsx";
 
-// Recharts 體積較大，只在打開詳情時才載入
+// 圖表套件只在打開詳情時才載入
 const PriceChart = lazy(() => import("./PriceChart.tsx"));
 
 type Props = {
@@ -195,7 +195,6 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
               <PriceChart
                 points={history.data}
                 targetPrice={watch.target_price ? Number(watch.target_price) : null}
-                weekAvg={watch.stats.week_avg ? Number(watch.stats.week_avg) : null}
               />
             </Suspense>
           </LoadBoundary>
