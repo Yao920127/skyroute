@@ -554,6 +554,19 @@
   border-color: var(--hairline);
 }
 
+/* 時間接不上上一段的航班：反灰、不可選，說明最早可起飛時間 */
+.split__option.is-blocked {
+  opacity: 0.45;
+}
+
+.split__option.is-blocked .split__pick {
+  cursor: not-allowed;
+}
+
+.split__option.is-blocked .split__info {
+  color: var(--error);
+}
+
 .split__option.is-selected {
   border-color: var(--primary);
   background: #fafaf8;

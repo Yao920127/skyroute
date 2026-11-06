@@ -136,6 +136,7 @@ The fare matrix streams NDJSON:
   - `ticket_mode="ticket"` is one Duffel query; it can include `extra_legs` for multi-city.
   - `ticket_mode="split"` makes one one-way query per leg, with optional `leg_airlines`, and records the summed price as `airline_code` like `CZ+BR`.
   - The patrol fetches every distinct query first (`FetchResults`), then prices each watch in `evaluate`.
+  - Split legs must connect in time (`domain/connections.py`, mirrored in `src/lib/splitPlan.ts`). A leg must depart at least 2h after the previous arrival at the same airport, or 4h when changing airports. `cheapest_chain` picks the cheapest feasible combination with dynamic programming. The patrol and the split view both use it.
 
 ### Patrol scheduling
 

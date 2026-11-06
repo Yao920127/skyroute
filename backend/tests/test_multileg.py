@@ -28,8 +28,10 @@ SPLIT = {
 }
 
 
-def one_way(offer_id: str, amount: str, origin: str, dest: str, owner: str) -> dict[str, Any]:
-    seg = raw_segment(origin, dest, f"{DEP}T08:00:00", f"{DEP}T12:00:00", "PT4H", owner, "1")
+def one_way(
+    offer_id: str, amount: str, origin: str, dest: str, owner: str, day: str = DEP
+) -> dict[str, Any]:
+    seg = raw_segment(origin, dest, f"{day}T08:00:00", f"{day}T12:00:00", "PT4H", owner, "1")
     return raw_offer(offer_id, amount, [[seg]], owner=owner)
 
 
@@ -43,8 +45,8 @@ def by_route(request: httpx.Request) -> httpx.Response:
             one_way("o2", "120", "TPE", "BKK", "VJ"),  # 更便宜但不是指定的 CZ
         ],
         ("BKK", "TPE"): [
-            one_way("r1", "200", "BKK", "TPE", "BR"),
-            one_way("r2", "190", "BKK", "TPE", "TG"),
+            one_way("r1", "200", "BKK", "TPE", "BR", BACK),
+            one_way("r2", "190", "BKK", "TPE", "TG", BACK),
         ],
     }[first]
     return httpx.Response(200, json={"data": {"offers": offers}})

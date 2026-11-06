@@ -22,6 +22,7 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import SessionFactory
+from app.domain.connections import cheapest_chain
 from app.domain.offers import FlightOffer
 from app.domain.topology import TopologyFilter, apply_topology
 from app.integrations.duffel_client import (
@@ -170,13 +171,13 @@ def price_watch(
     if watch.ticket_mode != "split":
         best = best_offer_for(watch, offer_sets[0])
         return Priced((best,)) if best else None
-    picks: list[FlightOffer] = []
-    for index, offers in enumerate(offer_sets):
-        best = _cheapest(offers, filter_for(watch, leg_airline(watch, index)))
-        if best is None:
-            return None
-        picks.append(best)
-    return Priced(tuple(picks))
+    # 每段先套用條件與指定航司，再找「時間銜接得上」的最便宜組合（不是各段各自最便宜）
+    candidates = [
+        list(apply_topology(offers, filter_for(watch, leg_airline(watch, index))))
+        for index, offers in enumerate(offer_sets)
+    ]
+    chain = cheapest_chain(candidates)
+    return Priced(tuple(chain)) if chain else None
 
 
 def route_hash_for(queries: list[RouteQuery]) -> str:

@@ -26,6 +26,7 @@ import {
 } from "./searchState.ts";
 import { intervalKey, isIntervalAllowed, nextCheckLabel, parseIntervalKey } from "./schedule.ts";
 import { sparklinePath } from "./sparkline.ts";
+import { cheapestChain, connects, earliestDeparture } from "./splitPlan.ts";
 import { legAirlinesText, routeText, watchLegs } from "./watchRoute.ts";
 import { stopAirports, stopsText } from "./stops.ts";
 import type { MatrixCell } from "./types.ts";
@@ -332,5 +333,31 @@ describe("watch route", () => {
     expect(legAirlinesText(["CZ", "BR"])).toBe("CZ + BR");
     expect(legAirlinesText(["CZ", null])).toBe("CZ + —");
     expect(legAirlinesText([null, null])).toBeNull();
+  });
+});
+
+describe("split ticket connections", () => {
+  const f = (id: string, price: number, o: string, d: string, dep: string, arr: string) => ({
+    id,
+    price,
+    origin: o,
+    destination: d,
+    departing_at: dep,
+    arriving_at: arr,
+  });
+  const toCts = f("a", 100, "NRT", "CTS", "2026-12-12T17:50:00", "2026-12-12T19:40:00");
+  const backEarly = f("b", 50, "CTS", "NRT", "2026-12-12T13:40:00", "2026-12-12T15:30:00");
+  const backOk = f("c", 90, "CTS", "NRT", "2026-12-12T21:45:00", "2026-12-12T23:35:00");
+
+  it("rejects a leg that leaves before the previous one lands", () => {
+    expect(connects(toCts, backEarly)).toBe(false);
+    expect(connects(toCts, backOk)).toBe(true);
+    expect(earliestDeparture(toCts, "CTS")).toBe("2026-12-12T21:40:00");
+  });
+
+  it("finds the cheapest feasible chain and honours fixed picks", () => {
+    expect(cheapestChain([[toCts], [backEarly, backOk]])?.map((x) => x.id)).toEqual(["a", "c"]);
+    expect(cheapestChain([[toCts], [backEarly, backOk]], [undefined, "b"])).toBeNull();
+    expect(cheapestChain([[toCts], [backEarly]])).toBeNull();
   });
 });

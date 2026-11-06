@@ -5,6 +5,7 @@ import { useI18n } from "../../i18n/i18n.ts";
 import { formatPrice } from "../../lib/currency.ts";
 import { dateWithWeekday, dayOffset, formatDuration, localTime } from "../../lib/format.ts";
 import { stopsText } from "../../lib/stops.ts";
+import { cheapestChain, connects, earliestDeparture, type LegFlight } from "../../lib/splitPlan.ts";
 import type { Leg, RankedOffer, SearchResult } from "../../lib/types.ts";
 import { ApiErrorNotice } from "../settings/ApiErrorNotice.tsx";
 import { OfferDetail } from "./OfferDetail.tsx";
@@ -18,12 +19,21 @@ type Props = {
 
 const PREVIEW = 6;
 
-/** 每段預設選最便宜的那班 */
-function cheapestId(result: SearchResult | undefined): string | null {
-  if (!result?.offers.length) return null;
-  return result.offers.reduce((best, o) =>
-    Number(o.offer.total_amount) < Number(best.offer.total_amount) ? o : best,
-  ).offer.id;
+/** 「2026-12-12T21:40:00」→「12/12 21:40」 */
+function shortDateTime(iso: string): string {
+  return `${Number(iso.slice(5, 7))}/${Number(iso.slice(8, 10))} ${iso.slice(11, 16)}`;
+}
+
+function toFlight(item: RankedOffer): LegFlight {
+  const s = item.offer.slices[0];
+  return {
+    id: item.offer.id,
+    price: Number(item.offer.total_amount),
+    origin: s.origin,
+    destination: s.destination,
+    departing_at: s.departing_at,
+    arriving_at: s.arriving_at,
+  };
 }
 
 /**
@@ -37,13 +47,41 @@ export function SplitView({ legs, queries, onWatchCombo }: Props) {
   // 展開詳細航班資料的選項（以報價 ID 記錄）
   const [openDetail, setOpenDetail] = useState<string | null>(null);
 
-  const selectedFor = (i: number): RankedOffer | undefined => {
-    const result = queries[i]?.data;
-    const id = picked[i] ?? cheapestId(result);
-    return result?.offers.find((o) => o.offer.id === id);
-  };
-  const selections = legs.map((_, i) => selectedFor(i));
-  const isComplete = selections.every(Boolean);
+  // 組合必須時間銜接得上：在可行組合中找總價最低的；使用者手動選的段落固定不動
+  const isLoaded = legs.every((_, i) => Boolean(queries[i]?.data));
+  const flights = legs.map((_, i) => (queries[i]?.data?.offers ?? []).map(toFlight));
+  const fixed = legs.map((_, i) => picked[i]);
+  const plan = isLoaded ? cheapestChain(flights, fixed) : null;
+  // 接不上時找出「第一個斷掉的段落」：前面能接上的段落照常選好，方便看出要改哪一段
+  const breakAt =
+    isLoaded && plan === null
+      ? legs.findIndex(
+          (_, k) => k > 0 && cheapestChain(flights.slice(0, k + 1), fixed.slice(0, k + 1)) === null,
+        )
+      : -1;
+  const shown =
+    plan ??
+    (breakAt > 0 ? cheapestChain(flights.slice(0, breakAt), fixed.slice(0, breakAt)) : null);
+  const selections = legs.map((_, i) =>
+    queries[i]?.data?.offers.find((o) => o.offer.id === shown?.[i]?.id),
+  );
+  const isComplete = plan !== null && selections.every(Boolean);
+  const isInfeasible = isLoaded && plan === null;
+  const breakPrevious = breakAt > 0 ? selections[breakAt - 1] : undefined;
+  const breakHint =
+    breakAt > 0 && breakPrevious
+      ? t("split.breakAt", {
+          n: breakAt + 1,
+          prev: breakAt,
+          time: shortDateTime(earliestDeparture(toFlight(breakPrevious), legs[breakAt].origin)),
+        })
+      : null;
+  // 改選某一段時，後面的段落交給自動配對重新找可銜接的航班
+  const pick = (i: number, id: string) =>
+    setPicked((p) => ({
+      ...Object.fromEntries(Object.entries(p).filter(([k]) => Number(k) < i)),
+      [i]: id,
+    }));
   const currency = queries.find((q) => q.data)?.data?.currency ?? null;
   const total = selections.reduce((sum, s) => sum + (s ? Number(s.offer.total_amount) : 0), 0);
   const airlines = new Set(selections.filter(Boolean).map((s) => s!.offer.airline_code));
@@ -90,17 +128,27 @@ export function SplitView({ legs, queries, onWatchCombo }: Props) {
                 const isSelected = selected?.offer.id === item.offer.id;
                 const s = item.offer.slices[0];
                 const offset = dayOffset(s.departing_at, s.arriving_at);
+                const previous = i > 0 ? selections[i - 1] : undefined;
+                const isBlocked =
+                  previous !== undefined && !connects(toFlight(previous), toFlight(item));
+                const earliest =
+                  isBlocked && previous ? earliestDeparture(toFlight(previous), s.origin) : null;
                 return (
                   <li
                     key={item.offer.id}
-                    className={`split__option ${isSelected ? "is-selected" : ""}`}
+                    className={`split__option ${isSelected ? "is-selected" : ""} ${isBlocked ? "is-blocked" : ""}`}
                   >
                     <button
                       type="button"
                       role="radio"
                       aria-checked={isSelected}
+                      aria-disabled={isBlocked}
+                      disabled={isBlocked}
+                      title={
+                        earliest ? t("split.blocked", { time: shortDateTime(earliest) }) : undefined
+                      }
                       className="split__pick"
-                      onClick={() => setPicked((p) => ({ ...p, [i]: item.offer.id }))}
+                      onClick={() => pick(i, item.offer.id)}
                     >
                       <span className="split__radio" aria-hidden="true" />
                       <span className="split__airline">
@@ -129,7 +177,9 @@ export function SplitView({ legs, queries, onWatchCombo }: Props) {
                         {offset > 0 && <sup>+{offset}</sup>}
                       </span>
                       <span className="split__info">
-                        {formatDuration(s.duration_minutes)} · {stopsText(s, t).text}
+                        {earliest
+                          ? t("split.blocked", { time: shortDateTime(earliest) })
+                          : `${formatDuration(s.duration_minutes)} · ${stopsText(s, t).text}`}
                       </span>
                       <span className="split__price mono">
                         {formatPrice(item.offer.total_amount, item.offer.currency, locale)}
@@ -172,6 +222,12 @@ export function SplitView({ legs, queries, onWatchCombo }: Props) {
         );
       })}
 
+      {breakHint && (
+        <p className="notice split__break" role="alert">
+          {breakHint}
+        </p>
+      )}
+
       <div className="split__summary" role="status">
         <ol className="split__chosen">
           {legs.map((leg, i) => (
@@ -195,7 +251,11 @@ export function SplitView({ legs, queries, onWatchCombo }: Props) {
         <div className="split__total">
           <span className="label">{t("split.total")}</span>
           <strong className="mono">
-            {isComplete && currency ? formatPrice(total, currency, locale) : t("split.pick")}
+            {isComplete && currency
+              ? formatPrice(total, currency, locale)
+              : isInfeasible
+                ? t("split.noChain")
+                : t("split.pick")}
           </strong>
           {isComplete && airlines.size > 1 && (
             <span className="split__mixed">{t("split.mixed", { n: airlines.size })}</span>

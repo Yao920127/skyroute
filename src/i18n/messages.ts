@@ -23,6 +23,10 @@ export const zh = {
   "nav.menuClose": "關閉選單",
   "nav.keyServer": "伺服器金鑰",
   "split.details": "詳細",
+  "split.blocked": "接不上前一段（{time} 後才能起飛）",
+  "split.noChain": "找不到時間銜接得上的組合",
+  "split.breakAt":
+    "第 {n} 段接不上第 {prev} 段：第 {prev} 段抵達後，要 {time} 之後起飛的航班才來得及，但這天沒有。請改第 {n} 段的日期，或換第 {prev} 段的航班。",
   "split.watchCombo": "追蹤這個組合",
   "watch.splitMode": "分段購票：每段各自查單程，以合計價格判斷",
   "watch.legAirlines": "每段指定航司（留空＝不限）",
@@ -225,7 +229,8 @@ export const zh = {
 
   // 分段購票
   "split.title": "分段購票",
-  "split.intro": "每一段分別查詢單程票，你可以自由搭配不同航司（例如去程華航、回程長榮）。",
+  "split.intro":
+    "每一段分別查詢單程票，你可以自由搭配不同航司（例如去程華航、回程長榮）。組合會自動確認前後段時間接得上：同機場至少留 2 小時，換機場至少 4 小時。",
   "split.warn": "分段購票是多張獨立機票：前段延誤時後段不會受到保護，改退票規則也各自獨立。",
   "split.legTitle": "第 {n} 段：{from} → {to}",
   "split.results": "{n} 個選項",
@@ -513,6 +518,10 @@ export const en: Record<MessageKey, string> = {
   "nav.menuClose": "Close menu",
   "nav.keyServer": "Server key",
   "split.details": "Details",
+  "split.blocked": "Doesn't connect (earliest departure {time})",
+  "split.noChain": "No combination connects in time",
+  "split.breakAt":
+    "Leg {n} can't connect to leg {prev}: after leg {prev} lands, you'd need a flight departing after {time}, and there isn't one. Change the date of leg {n} or pick a different flight for leg {prev}.",
   "split.watchCombo": "Watch this combination",
   "watch.splitMode": "Separate tickets: each leg is priced as a one-way and the total is tracked",
   "watch.legAirlines": "Airline per leg (blank = any)",
@@ -718,7 +727,7 @@ export const en: Record<MessageKey, string> = {
 
   "split.title": "Separate tickets",
   "split.intro":
-    "Each leg is searched as a one-way fare, so you can mix airlines (e.g. China Airlines out, EVA Air back).",
+    "Each leg is searched as a one-way fare, so you can mix airlines (e.g. China Airlines out, EVA Air back). Combinations always leave time to connect: at least 2 hours at the same airport, 4 hours when changing airports.",
   "split.warn":
     "Separate tickets aren't protected: if one flight is delayed the next airline won't rebook you, and change/refund rules differ per ticket.",
   "split.legTitle": "Leg {n}: {from} → {to}",
