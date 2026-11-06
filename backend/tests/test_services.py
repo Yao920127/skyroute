@@ -313,10 +313,25 @@ class TestBoardStats:
         assert stats.previous_day_price == Decimal("190")
         assert stats.day_change == Decimal("-20")
         assert stats.day_change_pct == Decimal("-10.53")
+        assert stats.change_basis == "day"
         assert stats.week_change_pct == Decimal("-15.00")
         assert stats.week_low == Decimal("170")
         assert stats.week_avg == Decimal("182.20")
         assert stats.sparkline[-1] == Decimal("170")
+
+    def test_day_change_uses_24_hours_not_calendar_date(self) -> None:
+        # 同一個 UTC 日期內、但已超過 24 小時之前沒有資料 → 與第一筆比較，標示 start
+        same_day = compute_stats([self._s(6, 1, "100"), self._s(6, 9, "103")])
+        assert same_day.day_change == Decimal("3") and same_day.change_basis == "start"
+        # 跨日但不到 24 小時（例如台北凌晨）也一樣，不再因 UTC 換日而時有時無
+        overnight = compute_stats([self._s(5, 20, "100"), self._s(6, 2, "99")])
+        assert overnight.change_basis == "start" and overnight.day_change == Decimal("-1")
+        full_day = compute_stats(
+            [self._s(5, 1, "90"), self._s(5, 10, "100"), self._s(6, 10, "110")]
+        )
+        assert full_day.change_basis == "day" and full_day.previous_day_price == Decimal("100")
+        single = compute_stats([self._s(6, 1, "100")])
+        assert single.day_change is None and single.change_basis is None
 
     def test_week_window_excludes_older_points(self) -> None:
         stats = compute_stats([self._s(1, 0, "500"), self._s(20, 0, "100")])

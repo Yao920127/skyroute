@@ -8,10 +8,10 @@ import type { PricePoint } from "../../lib/types.ts";
 type Props = {
   points: PricePoint[];
   targetPrice: number | null;
+  /** 線條顏色：由呼叫端依卡片同一組價格決定，左右兩邊才會一致 */
+  color: string;
 };
 
-// liveline 以 canvas 繪製，讀不到 CSS 變數；色碼對應 tokens.css 的 --gain
-const LINE_COLOR = "#0b7a5c";
 const MIN_WINDOW_S = 60 * 60;
 const WINDOW_PADDING = 1.04;
 
@@ -27,7 +27,7 @@ function timeLabel(unixSeconds: number): string {
  * 歷史票價走勢（liveline）：平滑曲線、不在每筆資料上畫點；目標價為參考線，滑過可看各時間點的價格。
  * liveline 是即時圖表，橫軸終點是「現在」，最新價格會延伸到現在，代表目前的價格。
  */
-export default function PriceChart({ points, targetPrice }: Props) {
+export default function PriceChart({ points, targetPrice, color }: Props) {
   const { locale, t } = useI18n();
   const currency = points[0]?.currency ?? "";
 
@@ -51,7 +51,7 @@ export default function PriceChart({ points, targetPrice }: Props) {
         data={data}
         value={latest}
         theme="light"
-        color={LINE_COLOR}
+        color={color}
         window={windowSecs}
         lineWidth={2}
         grid

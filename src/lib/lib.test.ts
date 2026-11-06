@@ -25,6 +25,7 @@ import {
   serializeSearchState,
 } from "./searchState.ts";
 import { intervalKey, isIntervalAllowed, nextCheckLabel, parseIntervalKey } from "./schedule.ts";
+import { priceTrend } from "./priceTrend.ts";
 import { sparklinePath } from "./sparkline.ts";
 import { discountedPrice, percentBelow } from "./targetPrice.ts";
 import { cheapestChain, connects, earliestDeparture } from "./splitPlan.ts";
@@ -375,5 +376,14 @@ describe("target price presets", () => {
     expect(percentBelow(36320, "40000")).toBeNull();
     expect(percentBelow(null, "100")).toBeNull();
     expect(percentBelow(36320, "")).toBeNull();
+  });
+});
+
+describe("price trend", () => {
+  it("compares the first and last price", () => {
+    expect(priceTrend([40410, 40690])).toBe("up");
+    expect(priceTrend([200, 190, 170])).toBe("down");
+    expect(priceTrend([5, 7, 5])).toBe("flat");
+    expect(priceTrend([5])).toBe("none");
   });
 });

@@ -1,4 +1,5 @@
 import { useI18n } from "../../i18n/i18n.ts";
+import { priceTrend, TREND_VAR } from "../../lib/priceTrend.ts";
 import { sparklinePath } from "../../lib/sparkline.ts";
 
 type Props = {
@@ -16,9 +17,7 @@ export function Sparkline({ values, className }: Props) {
     return <span className={`${className ?? ""} spark--empty`}>{t("card.sparkEmpty")}</span>;
   }
   const path = sparklinePath(values, WIDTH, HEIGHT);
-  const first = values[0];
-  const last = values[values.length - 1];
-  const tone = last < first ? "var(--gain)" : last > first ? "var(--loss)" : "var(--muted)";
+  const tone = TREND_VAR[priceTrend(values)];
   return (
     <svg
       className={className}

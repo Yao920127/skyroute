@@ -685,3 +685,9 @@
   height: 260px;
   min-width: 0;
 }
+
+/* 漲跌的比較基準（24h／起始），淡色小字 */
+.ticker__basis {
+  color: var(--muted);
+  font-size: 10px;
+}

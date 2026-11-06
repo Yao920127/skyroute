@@ -299,6 +299,9 @@ class PricePoint(BaseModel):
     duration_minutes: int
 
 
+ChangeBasis = Literal["day", "start"]
+
+
 class WatchStats(BaseModel):
     latest_price: Decimal | None = None
     currency: str | None = None
@@ -306,6 +309,8 @@ class WatchStats(BaseModel):
     previous_day_price: Decimal | None = None
     day_change: Decimal | None = None
     day_change_pct: Decimal | None = None
+    # day＝與 24 小時前比較；start＝追蹤未滿 24 小時，與第一筆價格比較
+    change_basis: ChangeBasis | None = None
     week_change_pct: Decimal | None = None
     week_low: Decimal | None = None
     week_avg: Decimal | None = None

@@ -202,6 +202,8 @@ export interface WatchStats {
   previous_day_price: string | null;
   day_change: string | null;
   day_change_pct: string | null;
+  /** day＝與 24 小時前比較；start＝追蹤未滿 24 小時，與第一筆價格比較 */
+  change_basis: "day" | "start" | null;
   week_change_pct: string | null;
   week_low: string | null;
   week_avg: string | null;

@@ -58,6 +58,9 @@ export function WatchCard({ watch, isSelected, onSelect }: Props) {
             <>
               {dayTrend === "down" ? "▼" : dayTrend === "up" ? "▲" : "■"}{" "}
               {money(Math.abs(Number(stats.day_change)))} ({formatPct(stats.day_change_pct)})
+              {stats.change_basis && (
+                <small className="ticker__basis"> {t(`card.basis.${stats.change_basis}`)}</small>
+              )}
             </>
           ) : (
             `${t("card.yesterday")} —`
