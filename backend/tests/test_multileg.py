@@ -92,6 +92,10 @@ class TestSplitPatrol:
         ).json()["data"]
         assert history[0]["price"] == "350.00"  # CZ 150 + BR 200（不是較便宜的 VJ、TG）
         assert history[0]["airline_code"] == "CZ+BR"
+        itinerary = (
+            await client.get(f"/api/watchlists/{created['id']}/itinerary", headers=USER)
+        ).json()["data"]
+        assert [o["airline_code"] for o in itinerary["offers"]] == ["CZ", "BR"]
         assert report.alerts_sent == 1  # 350 ≤ 目標價 400；另一筆目標價 1 不觸發
 
     @respx.mock

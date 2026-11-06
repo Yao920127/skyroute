@@ -255,6 +255,7 @@ async def process_watch(
         currency=priced.currency,
         duration_minutes=priced.duration_minutes,
         stops=priced.stops,
+        offers=[o.model_dump(mode="json") for o in priced.offers],
         recorded_at=now,
     )
     session.add(record)

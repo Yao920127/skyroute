@@ -13,7 +13,7 @@ from sqlalchemy import select
 
 from app.config import Settings
 from app.container import Container
-from app.models import AlertHistory, TrackedWatchlist, WatchStatus
+from app.models import AlertHistory, PriceHistory, TrackedWatchlist, WatchStatus
 from app.services.patrol import run_patrol
 from tests.conftest import DUFFEL, USER
 from tests.factories import connecting_raw, direct_raw
@@ -259,6 +259,14 @@ class TestPatrolPipeline:
             "data"
         ]
         assert [Decimal(p["price"]) for p in history] == [Decimal("180.00")]
+        itinerary = (
+            await client.get(f"/api/watchlists/{cheap['id']}/itinerary", headers=USER)
+        ).json()["data"]
+        assert Decimal(itinerary["price"]) == Decimal("180.00")
+        assert [o["id"] for o in itinerary["offers"]] == ["c1"]
+        segments = itinerary["offers"][0]["slices"][0]["segments"]
+        assert [s["destination"] for s in segments][0] == "HKG"
+        assert itinerary["offers"][0]["slices"][0]["layovers"][0]["airport"] == "HKG"
         alerts = (await client.get(f"/api/watchlists/{cheap['id']}/alerts", headers=USER)).json()[
             "data"
         ]
@@ -357,6 +365,52 @@ class TestPatrolPipeline:
             assert (await http.post("/api/patrol/run")).status_code == 403
             ok = await http.post("/api/patrol/run", headers={"X-Admin-Token": "s3cret"})
             assert ok.status_code == 200
+
+
+class TestItinerary:
+    async def _add_price(self, container: Container, watch_id: str, offers: object) -> None:
+        async with container.sessions() as session:
+            session.add(
+                PriceHistory(
+                    watchlist_id=watch_id,
+                    route_hash="x",
+                    airline_code="BR",
+                    price=Decimal("100"),
+                    currency="USD",
+                    duration_minutes=60,
+                    stops=0,
+                    offers=offers,
+                )
+            )
+            await session.commit()
+
+    async def test_null_before_first_patrol(self, client: httpx.AsyncClient) -> None:
+        watch = await create_watch(client)
+        res = await client.get(f"/api/watchlists/{watch['id']}/itinerary", headers=USER)
+        assert res.status_code == 200 and res.json()["data"] is None
+
+    async def test_null_for_legacy_rows_without_offers(
+        self, client: httpx.AsyncClient, container: Container
+    ) -> None:
+        watch = await create_watch(client)
+        await self._add_price(container, watch["id"], None)
+        res = await client.get(f"/api/watchlists/{watch['id']}/itinerary", headers=USER)
+        assert res.json()["data"] is None
+
+    async def test_null_when_stored_offer_is_malformed(
+        self, client: httpx.AsyncClient, container: Container
+    ) -> None:
+        watch = await create_watch(client)
+        await self._add_price(container, watch["id"], [{"id": "broken"}])
+        res = await client.get(f"/api/watchlists/{watch['id']}/itinerary", headers=USER)
+        assert res.json()["data"] is None
+
+    async def test_other_users_cannot_read(self, client: httpx.AsyncClient) -> None:
+        watch = await create_watch(client)
+        res = await client.get(
+            f"/api/watchlists/{watch['id']}/itinerary", headers={"X-User-Id": "someone-else"}
+        )
+        assert res.status_code == 404
 
 
 class TestDeleteWatchlist:

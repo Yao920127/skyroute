@@ -11,6 +11,7 @@ import type {
   CredentialCheck,
   FilterParams,
   FxTable,
+  Itinerary,
   MatrixLine,
   PatrolReport,
   PricePoint,
@@ -137,6 +138,9 @@ export const api = {
     request<PricePoint[]>(`/api/watchlists/${id}/history?days=${days}`),
 
   alerts: (id: string) => request<AlertRecord[]>(`/api/watchlists/${id}/alerts`),
+
+  /** 最近一次巡檢選中的航班明細；尚未巡檢過時為 null */
+  itinerary: (id: string) => request<Itinerary | null>(`/api/watchlists/${id}/itinerary`),
 
   /** 只巡檢自己的追蹤（不需管理密碼；伺服器有每人冷卻時間） */
   runPatrol: () => request<PatrolReport>("/api/watchlists/patrol", { method: "POST" }),

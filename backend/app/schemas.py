@@ -15,7 +15,7 @@ from pydantic import (
 )
 
 from app.domain.metrics import DEFAULT_TIME_VALUE_PER_HOUR, SortKey
-from app.domain.offers import CabinClass, RankedOffer
+from app.domain.offers import CabinClass, FlightOffer, RankedOffer
 from app.domain.topology import DEFAULT_MAX_LAYOVER, DEFAULT_MIN_LAYOVER, TopologyFilter
 from app.services.fx import CurrencyCode
 from app.services.schedule import PatrolInterval
@@ -297,6 +297,15 @@ class PricePoint(BaseModel):
     airline_code: str
     stops: int
     duration_minutes: int
+
+
+class Itinerary(BaseModel):
+    """最近一次巡檢選中的航班明細；分段購票每段一筆 offer。"""
+
+    recorded_at: datetime
+    price: Decimal
+    currency: str
+    offers: list[FlightOffer]
 
 
 ChangeBasis = Literal["day", "start"]

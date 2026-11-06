@@ -1,15 +1,25 @@
 """自選看盤清單：建立、編輯（名稱與巡檢頻率）、查詢（附統計）、軟刪除、歷史價格與告警紀錄。"""
 
+import logging
 import uuid
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
+from pydantic import ValidationError
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domain.offers import FlightOffer
 from app.integrations.duffel_client import DuffelClient
 from app.models import AlertHistory, PriceHistory, TrackedWatchlist, WatchStatus
-from app.schemas import AlertOut, PricePoint, WatchlistCreate, WatchlistOut, WatchlistUpdate
+from app.schemas import (
+    AlertOut,
+    Itinerary,
+    PricePoint,
+    WatchlistCreate,
+    WatchlistOut,
+    WatchlistUpdate,
+)
 from app.services.airport_service import ensure_airport
 from app.services.alerts import validate_webhook_url
 from app.services.board_stats import PriceSample, compute_stats
@@ -17,6 +27,8 @@ from app.services.credentials import CipherUnavailable, TokenCipher
 from app.services.schedule import IntervalNotAllowed, PatrolSchedule, check_interval
 
 STATS_LOOKBACK_DAYS = 30
+
+log = logging.getLogger(__name__)
 
 
 class NotFoundError(Exception):
@@ -228,6 +240,29 @@ async def price_history(
         )
         for r in rows
     ]
+
+
+async def latest_itinerary(
+    session: AsyncSession, user_id: str, watch_id: uuid.UUID
+) -> Itinerary | None:
+    """最近一筆有航班明細的價格紀錄；舊紀錄（尚未記錄明細）或資料格式不符時回傳 None。"""
+    await get_owned(session, user_id, watch_id)
+    row = await session.scalar(
+        select(PriceHistory)
+        .where(PriceHistory.watchlist_id == watch_id, PriceHistory.offers.is_not(None))
+        .order_by(PriceHistory.recorded_at.desc())
+        .limit(1)
+    )
+    if row is None or not row.offers:
+        return None
+    try:
+        offers = [FlightOffer.model_validate(o) for o in row.offers]
+    except ValidationError as exc:
+        log.warning("標的 %s 的航班明細格式不符，略過：%s", watch_id, exc)
+        return None
+    return Itinerary(
+        recorded_at=row.recorded_at, price=row.price, currency=row.currency, offers=offers
+    )
 
 
 async def alert_history(session: AsyncSession, user_id: str, watch_id: uuid.UUID) -> list[AlertOut]:

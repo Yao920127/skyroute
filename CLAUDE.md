@@ -118,6 +118,7 @@ The fare matrix streams NDJSON:
 - It is system-wide: it patrols every user's active watches, not just the caller's.
 - It first expires watches whose departure date has passed.
 - It groups the remaining watches by `(query, key_fingerprint)`, consumes the groups from an asyncio queue, and writes rows to `price_history`.
+- Each `price_history` row also stores the chosen offers as JSON (`offers`, one per leg for split tickets). `GET /api/watchlists/{id}/itinerary` returns the latest one for the board's flight-detail panel; older rows without it return `null`.
 - Alerts are in `services/alerts.py` and have a 24-hour cooldown.
 - A Redis lock (`skyroute:lock:patrol`) ensures only one patrol runs at a time.
 - User Duffel keys are stored Fernet-encrypted in `tracked_watchlists.duffel_token_enc`. The encryption key is derived from `SECRET_KEY`.

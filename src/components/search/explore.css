@@ -317,14 +317,6 @@
   color: var(--body-muted) !important;
 }
 
-.legs__operated,
-.legs__stop {
-  flex-basis: 100%;
-  padding-left: 84px;
-  color: var(--slate);
-  font-size: var(--text-micro);
-}
-
 .slice__direct {
   color: var(--gain) !important;
 }
@@ -376,42 +368,6 @@
   padding: var(--space-lg);
   background: var(--soft-stone);
   border-radius: var(--radius-sm);
-}
-
-.legs {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-sm);
-  font-size: var(--text-caption);
-}
-
-.legs li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-md);
-}
-
-.legs__flight {
-  min-width: 72px;
-}
-
-.legs__meta {
-  color: var(--body-muted);
-}
-
-.legs__layover {
-  flex-basis: 100%;
-  padding-left: 84px;
-  color: var(--coral);
-  font-size: var(--text-micro);
-}
-
-.offer__conditions {
-  margin: 0;
-  font-size: var(--text-micro);
-  color: var(--body-muted);
 }
 
 /* ---------- 購票方式（整張票／分段購票） ---------- */
@@ -1010,10 +966,5 @@
 
   .offer__detail {
     padding: var(--space-md);
-  }
-
-  .legs__layover,
-  .legs__stop {
-    padding-left: 0;
   }
 }

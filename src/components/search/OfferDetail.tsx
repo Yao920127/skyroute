@@ -1,6 +1,7 @@
 import { useI18n } from "../../i18n/i18n.ts";
 import { formatDuration, localDate, localTime } from "../../lib/format.ts";
 import type { FlightOffer } from "../../lib/types.ts";
+import "./offer-detail.css";
 
 type Props = {
   offer: FlightOffer;

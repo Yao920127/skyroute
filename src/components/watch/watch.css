@@ -429,6 +429,56 @@
   color: var(--muted);
 }
 
+/* ---------- 航班明細（最近一次巡檢的最低價航班） ---------- */
+
+.itinerary {
+  display: grid;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.itinerary__offer {
+  display: grid;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding: var(--space-md);
+  background: var(--soft-stone);
+  border-radius: var(--radius-sm);
+}
+
+.itinerary__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-caption);
+}
+
+.itinerary__head img {
+  border-radius: var(--radius-full);
+}
+
+.itinerary__head .sim-tag {
+  margin: 0;
+}
+
+.itinerary__price {
+  margin-left: auto;
+}
+
+.itinerary__legs {
+  display: grid;
+  gap: var(--space-sm);
+  min-width: 0;
+  overflow-x: auto;
+}
+
+/* 去程、回程之間以虛線分隔 */
+.itinerary__legs .legs + .legs {
+  padding-top: var(--space-sm);
+  border-top: 1px dashed var(--hairline);
+}
+
 .alerts {
   list-style: none;
   margin: 0;

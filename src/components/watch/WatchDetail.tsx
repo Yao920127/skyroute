@@ -10,6 +10,7 @@ import { routeText, watchLegs } from "../../lib/watchRoute.ts";
 import type { Watchlist } from "../../lib/types.ts";
 import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
 import { EditWatchDialog } from "./EditWatchDialog.tsx";
+import { WatchItinerary } from "./WatchItinerary.tsx";
 import { LoadBoundary } from "../ui/LoadBoundary.tsx";
 import { priceTrend, TREND_HEX } from "../../lib/priceTrend.ts";
 
@@ -202,6 +203,8 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
           </LoadBoundary>
         )}
       </div>
+
+      <WatchItinerary watch={watch} />
 
       <section aria-labelledby="alerts-title">
         <h4 id="alerts-title" className="detail__subtitle">

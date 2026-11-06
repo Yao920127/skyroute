@@ -1,0 +1,55 @@
+/* 航班明細（搜尋結果展開、看盤詳情共用） */
+
+.legs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+  font-size: var(--text-caption);
+}
+
+.legs li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.legs__flight {
+  min-width: 72px;
+}
+
+.legs__meta {
+  color: var(--body-muted);
+}
+
+.legs__layover,
+.legs__operated,
+.legs__stop {
+  flex-basis: 100%;
+  padding-left: 84px;
+  font-size: var(--text-micro);
+}
+
+.legs__layover {
+  color: var(--coral);
+}
+
+.legs__operated,
+.legs__stop {
+  color: var(--slate);
+}
+
+.offer__conditions {
+  margin: 0;
+  font-size: var(--text-micro);
+  color: var(--body-muted);
+}
+
+@media (max-width: 640px) {
+  .legs__layover,
+  .legs__operated,
+  .legs__stop {
+    padding-left: 0;
+  }
+}

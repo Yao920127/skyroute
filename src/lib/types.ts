@@ -267,6 +267,14 @@ export interface WatchlistUpdate {
   drop_percent?: number | null;
 }
 
+/** 最近一次巡檢選中的航班；分段購票每段一筆 offer */
+export interface Itinerary {
+  recorded_at: string;
+  price: string;
+  currency: string;
+  offers: FlightOffer[];
+}
+
 export interface PricePoint {
   recorded_at: string;
   price: string;

@@ -4,6 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     BigInteger,
@@ -130,6 +131,8 @@ class PriceHistory(Base):
     currency: Mapped[str] = mapped_column(String(3), default="TWD", server_default="TWD")
     duration_minutes: Mapped[int] = mapped_column(Integer)
     stops: Mapped[int] = mapped_column(Integer)
+    # 本次巡檢選中的航班（FlightOffer JSON，分段購票每段一筆），供看盤詳情顯示航段明細
+    offers: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
     recorded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), index=True
     )

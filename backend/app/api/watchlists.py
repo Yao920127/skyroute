@@ -11,6 +11,7 @@ from app.schemas import (
     AlertOut,
     ApiResponse,
     DeletedCount,
+    Itinerary,
     PatrolReport,
     PricePoint,
     WatchlistCreate,
@@ -102,6 +103,14 @@ async def history(
     days: Annotated[int, Query(ge=1, le=365)] = 30,
 ) -> ApiResponse[list[PricePoint]]:
     return ApiResponse(data=await svc.price_history(session, user, watch_id, days))
+
+
+@router.get("/watchlists/{watch_id}/itinerary", response_model=ApiResponse[Itinerary | None])
+async def itinerary(
+    watch_id: uuid.UUID, session: SessionDep, user: UserDep
+) -> ApiResponse[Itinerary | None]:
+    """最近一次巡檢選中的航班明細（班號、時間、機型、轉機）。"""
+    return ApiResponse(data=await svc.latest_itinerary(session, user, watch_id))
 
 
 @router.get("/watchlists/{watch_id}/alerts", response_model=ApiResponse[list[AlertOut]])
