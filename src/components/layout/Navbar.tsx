@@ -28,6 +28,9 @@ export const NAV_ITEMS: { id: Exclude<View, "home">; labelKey: MessageKey }[] = 
 /** Duffel 串接指南（public/apidocs.html），一律在新分頁開啟 */
 export const API_GUIDE_URL = "/apidocs";
 
+/** 系統架構圖（floorplan 匯出版，Railway 的 floorplan 服務），一律在新分頁開啟 */
+export const ARCHITECTURE_MAP_URL = "https://floorplan-skyroute.up.railway.app";
+
 const LANGS: { id: Lang; label: string }[] = [
   { id: "zh", label: "中" },
   { id: "en", label: "EN" },

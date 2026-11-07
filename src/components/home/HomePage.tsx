@@ -5,6 +5,7 @@ import type { MessageKey } from "../../i18n/messages.ts";
 import { addDays } from "../../lib/format.ts";
 import { defaultSearchState, serializeSearchState } from "../../lib/searchState.ts";
 import type { SearchState } from "../../lib/types.ts";
+import { ARCHITECTURE_MAP_URL } from "../layout/Navbar.tsx";
 import { HeroMedia } from "./HeroMedia.tsx";
 
 type Props = {
@@ -24,9 +25,6 @@ const CAPABILITIES: { n: 1 | 2 | 3; view: View; icon: "route" | "grid" | "pulse"
 const PIPELINE = [1, 2, 3, 4, 5] as const;
 const SPECS = [1, 2, 3, 4, 5, 6] as const;
 const SPEC_TAGS = ["Cache-Aside", "Token bucket", "Topology", "Fare matrix", "Alerting", "FX"];
-
-/** 系統架構圖（floorplan 匯出版，部署在 Railway），一律在新分頁開啟 */
-export const ARCHITECTURE_MAP_URL = "https://floorplan-production-76e7.up.railway.app";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -78,6 +76,14 @@ export function HomePage({ trackingCount, onNavigate }: Props) {
           <button type="button" className="btn btn--ghost" onClick={() => onNavigate("board")}>
             {trackingCount > 0 ? t("home.ctaBoardN", { n: trackingCount }) : t("home.ctaBoard")}
           </button>
+          <a
+            className="btn btn--ghost"
+            href={ARCHITECTURE_MAP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t("home.archMap")} ↗<span className="visually-hidden">{t("common.newTab")}</span>
+          </a>
         </div>
 
         <HeroMedia />
@@ -227,14 +233,6 @@ export function HomePage({ trackingCount, onNavigate }: Props) {
             ))}
           </tbody>
         </table>
-        <a
-          className="btn btn--ghost specs__map"
-          href={ARCHITECTURE_MAP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {t("home.specsMap")} ↗<span className="visually-hidden">{t("common.newTab")}</span>
-        </a>
       </section>
 
       <section className="cta" aria-labelledby="cta-title">
