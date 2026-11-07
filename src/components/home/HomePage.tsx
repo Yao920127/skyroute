@@ -26,7 +26,7 @@ const SPECS = [1, 2, 3, 4, 5, 6] as const;
 const SPEC_TAGS = ["Cache-Aside", "Token bucket", "Topology", "Fare matrix", "Alerting", "FX"];
 
 /** 系統架構圖（floorplan 匯出版，部署在 Railway），一律在新分頁開啟 */
-export const ARCHITECTURE_MAP_URL = "https://skyroute-floorplan-production.up.railway.app";
+export const ARCHITECTURE_MAP_URL = "https://floorplan-production-76e7.up.railway.app";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
