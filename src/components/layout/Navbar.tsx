@@ -5,6 +5,7 @@ import type { View } from "../../hooks/useUrlState.ts";
 import { setLang, useI18n, type Lang } from "../../i18n/i18n.ts";
 import type { MessageKey } from "../../i18n/messages.ts";
 import { CURRENCIES, setCurrency, useCurrency, type Currency } from "../../lib/currency.ts";
+import { setThemeMode, useThemeMode, type ThemeMode } from "../../lib/theme.ts";
 import { AccountMenu } from "../auth/AccountMenu.tsx";
 import { Select } from "../ui/Select.tsx";
 
@@ -36,13 +37,63 @@ const LANGS: { id: Lang; label: string }[] = [
   { id: "en", label: "EN" },
 ];
 
-/** 語言切換與幣別選單（導覽列與手機選單共用） */
+const THEMES: { id: ThemeMode; labelKey: MessageKey }[] = [
+  { id: "system", labelKey: "theme.system" },
+  { id: "light", labelKey: "theme.light" },
+  { id: "dark", labelKey: "theme.dark" },
+];
+
+/** 細線圖示：系統（螢幕）、亮色（太陽）、暗色（月亮） */
+function ThemeIcon({ mode }: { mode: ThemeMode }) {
+  return (
+    <svg className="prefs__icon" viewBox="0 0 24 24" aria-hidden="true">
+      {mode === "system" && (
+        <>
+          <rect x="3" y="4" width="18" height="12" rx="2" />
+          <path d="M8 20h8M12 16v4" />
+        </>
+      )}
+      {mode === "light" && (
+        <>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        </>
+      )}
+      {mode === "dark" && <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />}
+    </svg>
+  );
+}
+
+/** 配色切換：系統／亮色／暗色 */
+function ThemeSwitch() {
+  const { t } = useI18n();
+  const mode = useThemeMode();
+  return (
+    <div className="prefs__seg prefs__theme" role="radiogroup" aria-label={t("common.theme")}>
+      {THEMES.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          role="radio"
+          aria-checked={mode === item.id}
+          title={t(item.labelKey)}
+          onClick={() => setThemeMode(item.id)}
+        >
+          <ThemeIcon mode={item.id} />
+          <span className="visually-hidden">{t(item.labelKey)}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** 語言、配色與幣別（導覽列與手機選單共用） */
 function Preferences({ variant }: { variant: "bar" | "menu" }) {
   const { lang, t } = useI18n();
   const currency = useCurrency();
   return (
     <div className={`prefs prefs--${variant}`}>
-      <div className="prefs__lang" role="radiogroup" aria-label={t("common.lang")}>
+      <div className="prefs__seg prefs__lang" role="radiogroup" aria-label={t("common.lang")}>
         {LANGS.map((l) => (
           <button
             key={l.id}
@@ -55,6 +106,7 @@ function Preferences({ variant }: { variant: "bar" | "menu" }) {
           </button>
         ))}
       </div>
+      <ThemeSwitch />
       <Select
         size="sm"
         className="prefs__currency"

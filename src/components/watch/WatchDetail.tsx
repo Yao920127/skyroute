@@ -12,7 +12,7 @@ import { splitMessage, useConfirm } from "../ui/ConfirmDialog.tsx";
 import { EditWatchDialog } from "./EditWatchDialog.tsx";
 import { WatchItinerary } from "./WatchItinerary.tsx";
 import { LoadBoundary } from "../ui/LoadBoundary.tsx";
-import { priceTrend, TREND_HEX } from "../../lib/priceTrend.ts";
+import { priceTrend } from "../../lib/priceTrend.ts";
 
 // 圖表套件只在打開詳情時才載入
 const PriceChart = lazy(() => import("./PriceChart.tsx"));
@@ -197,7 +197,7 @@ export function WatchDetail({ watch, isEmbedded = false, onDeleted }: Props) {
               <PriceChart
                 points={history.data}
                 targetPrice={watch.target_price ? Number(watch.target_price) : null}
-                color={TREND_HEX[priceTrend(watch.stats.sparkline.map(Number))]}
+                trend={priceTrend(watch.stats.sparkline.map(Number))}
               />
             </Suspense>
           </LoadBoundary>

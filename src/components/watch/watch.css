@@ -16,7 +16,7 @@
   gap: var(--space-lg);
   margin: 0;
   padding: var(--space-xl);
-  background: var(--primary);
+  background: var(--panel);
   color: var(--on-dark);
   border-radius: var(--radius-sm);
   animation: fade-up var(--duration-normal) var(--ease-out-expo) both;

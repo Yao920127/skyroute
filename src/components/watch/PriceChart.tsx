@@ -3,13 +3,15 @@ import { useMemo } from "react";
 
 import { useI18n } from "../../i18n/i18n.ts";
 import { formatPrice } from "../../lib/currency.ts";
+import { trendHex, type PriceTrend } from "../../lib/priceTrend.ts";
+import { useResolvedTheme } from "../../lib/theme.ts";
 import type { PricePoint } from "../../lib/types.ts";
 
 type Props = {
   points: PricePoint[];
   targetPrice: number | null;
-  /** 線條顏色：由呼叫端依卡片同一組價格決定，左右兩邊才會一致 */
-  color: string;
+  /** 漲跌方向：由呼叫端依卡片同一組價格決定，兩邊顏色才會一致；實際色碼依亮／暗模式而定 */
+  trend: PriceTrend;
 };
 
 const MIN_WINDOW_S = 60 * 60;
@@ -27,7 +29,8 @@ function timeLabel(unixSeconds: number): string {
  * 歷史票價走勢（liveline）：平滑曲線、不在每筆資料上畫點；目標價為參考線，滑過可看各時間點的價格。
  * liveline 是即時圖表，橫軸終點是「現在」，最新價格會延伸到現在，代表目前的價格。
  */
-export default function PriceChart({ points, targetPrice, color }: Props) {
+export default function PriceChart({ points, targetPrice, trend }: Props) {
+  const theme = useResolvedTheme();
   const { locale, t } = useI18n();
   const currency = points[0]?.currency ?? "";
 
@@ -50,8 +53,8 @@ export default function PriceChart({ points, targetPrice, color }: Props) {
       <Liveline
         data={data}
         value={latest}
-        theme="light"
-        color={color}
+        theme={theme}
+        color={trendHex(trend, theme)}
         window={windowSecs}
         lineWidth={2}
         grid

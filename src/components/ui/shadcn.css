@@ -87,7 +87,7 @@
 .sc-select-trigger:focus-visible {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 .sc-select-trigger[data-placeholder] {
@@ -161,7 +161,7 @@
   border: 1px solid var(--primary);
   border-radius: var(--radius-xs);
   background: var(--canvas);
-  color: var(--on-dark);
+  color: var(--on-primary);
   cursor: pointer;
   transition: background var(--duration-fast);
 }
@@ -172,7 +172,7 @@
 
 .sc-checkbox:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.16);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .sc-checkbox:disabled {
@@ -307,16 +307,16 @@
 
 .sc-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.16);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .sc-btn--default {
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .sc-btn--default:hover {
-  background: var(--black);
+  background: var(--primary-hover);
 }
 
 .sc-btn--destructive {
@@ -325,7 +325,7 @@
 }
 
 .sc-btn--destructive:hover {
-  background: #8f0000;
+  background: var(--error-strong);
 }
 
 .sc-btn--outline {

@@ -65,7 +65,7 @@
 
 .account__avatar:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgb(23 23 28 / 0.16);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .account__avatar img {

@@ -33,6 +33,19 @@
   --loss: var(--error);
   --loss-wash: #fbeeee;
 
+  /* 主色上的文字、深色面板、各種淺底（暗色模式會換掉） */
+  --on-primary: #ffffff;
+  --primary-hover: #000000;
+  --panel: #17171c;
+  --surface-subtle: #fafaf8;
+  --warn-wash: #fff6f3;
+  --warn-ink: #b4482f;
+  --error-strong: #8f0000;
+
+  /* 深色區塊上的白底按鈕：亮暗模式都維持白底深字 */
+  --on-light: #17171c;
+  --light-hover: #edfce9;
+
   /* 深色產品區塊上的文字 */
   --on-dark: #ffffff;
   --on-dark-muted: rgb(255 255 255 / 0.62);
@@ -85,4 +98,45 @@
   --duration-fast: 140ms;
   --duration-normal: 260ms;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+ * 暗色模式：<html data-theme="dark">（由 src/lib/theme.ts 與 public/theme-init.js 設定）。
+ * 只換顏色；深綠與深色面板維持深色，上面的文字仍用 --on-dark。
+ */
+:root[data-theme="dark"] {
+  --primary: #f2f1ec;
+  --ink: #e6e6e3;
+  --deep-green: #0c4a3f;
+  --action-blue: #6ea0ff;
+
+  --canvas: #111214;
+  --soft-stone: #1e1f22;
+  --pale-green: #0e2a22;
+  --pale-blue: #121c2e;
+  --card-border: #222327;
+
+  --muted: #8a8a96;
+  --slate: #a0a0b2;
+  --body-muted: #b0b0b6;
+  --hairline: #34353b;
+  --border-light: #2a2b30;
+
+  --focus-blue: #8aa2ff;
+  --form-focus: #c58fd6;
+  --error: #ff6b66;
+  --gain: #3cc79a;
+  --loss-wash: #3a1d1d;
+
+  --on-primary: #17171c;
+  --primary-hover: #ffffff;
+  --panel: #1b1c20;
+  --surface-subtle: #17181b;
+  --warn-wash: #2e1d17;
+  --warn-ink: #ff9e85;
+  --error-strong: #ff8a85;
+
+  --heat-low: #1d8a68;
+  --heat-mid: #2a2b2f;
+  --heat-high: #9e3f2c;
 }

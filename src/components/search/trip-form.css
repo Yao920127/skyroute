@@ -55,7 +55,7 @@
     padding: 8px 16px;
     border-radius: var(--radius-full);
     background: var(--on-dark);
-    color: var(--primary);
+    color: var(--on-light);
     font-size: var(--text-caption);
   }
 }
@@ -259,14 +259,14 @@
   border: none;
   border-radius: var(--radius-pill);
   background: var(--on-dark);
-  color: var(--primary);
+  color: var(--on-light);
   font-size: var(--text-body);
   font-weight: 500;
   transition: background var(--duration-fast);
 }
 
 .trip__submit:hover {
-  background: var(--pale-green);
+  background: var(--light-hover);
 }
 
 .trip__error {

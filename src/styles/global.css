@@ -5,7 +5,7 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: light dark;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -141,11 +141,11 @@ button {
 
 .btn--primary {
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: var(--black);
+  background: var(--primary-hover);
 }
 
 .btn--lg {
@@ -157,11 +157,11 @@ button {
 .btn--light {
   background: var(--on-dark);
   border-color: var(--on-dark);
-  color: var(--primary);
+  color: var(--on-light);
 }
 
 .btn--light:hover:not(:disabled) {
-  background: var(--pale-green);
+  background: var(--light-hover);
 }
 
 /* 次要動作：純文字連結 */
@@ -185,7 +185,7 @@ button {
 
 .btn--danger {
   color: var(--error);
-  text-decoration-color: rgb(179 0 0 / 0.3);
+  text-decoration-color: color-mix(in srgb, var(--error) 30%, transparent);
 }
 
 .btn--danger:hover:not(:disabled) {
@@ -261,7 +261,7 @@ button.chip:hover {
 .chip[aria-pressed="true"].chip--pick {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 /* ---------- 分段選擇 ---------- */
@@ -292,7 +292,7 @@ button.chip:hover {
 
 .segmented button[aria-checked="true"] {
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .segmented button:disabled {
@@ -310,8 +310,8 @@ button.chip:hover {
   padding: 1px 8px;
   border: 1px dashed var(--coral);
   border-radius: var(--radius-full);
-  background: #fff6f3;
-  color: #b4482f;
+  background: var(--warn-wash);
+  color: var(--warn-ink);
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.02em;
@@ -332,7 +332,7 @@ button.chip:hover {
   padding: var(--space-md) var(--space-lg);
   border: 1px dashed var(--coral);
   border-radius: var(--radius-sm);
-  background: #fff6f3;
+  background: var(--warn-wash);
   font-size: var(--text-caption);
   color: var(--body-muted);
 }

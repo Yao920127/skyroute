@@ -25,7 +25,8 @@ import {
   serializeSearchState,
 } from "./searchState.ts";
 import { intervalKey, isIntervalAllowed, nextCheckLabel, parseIntervalKey } from "./schedule.ts";
-import { priceTrend } from "./priceTrend.ts";
+import { priceTrend, trendHex } from "./priceTrend.ts";
+import { parseThemeMode, resolveTheme } from "./theme.ts";
 import { sparklinePath } from "./sparkline.ts";
 import { discountedPrice, percentBelow } from "./targetPrice.ts";
 import { cheapestChain, connects, earliestDeparture } from "./splitPlan.ts";
@@ -385,5 +386,28 @@ describe("price trend", () => {
     expect(priceTrend([200, 190, 170])).toBe("down");
     expect(priceTrend([5, 7, 5])).toBe("flat");
     expect(priceTrend([5])).toBe("none");
+  });
+});
+
+describe("theme", () => {
+  it("falls back to system for unknown saved values", () => {
+    expect(parseThemeMode("dark")).toBe("dark");
+    expect(parseThemeMode("light")).toBe("light");
+    expect(parseThemeMode("system")).toBe("system");
+    expect(parseThemeMode(null)).toBe("system");
+    expect(parseThemeMode("sepia")).toBe("system");
+  });
+
+  it("follows the OS only in system mode", () => {
+    expect(resolveTheme("system", true)).toBe("dark");
+    expect(resolveTheme("system", false)).toBe("light");
+    expect(resolveTheme("light", true)).toBe("light");
+    expect(resolveTheme("dark", false)).toBe("dark");
+  });
+
+  it("uses theme-specific canvas colors for price trends", () => {
+    expect(trendHex("down", "light")).toBe("#0b7a5c");
+    expect(trendHex("down", "dark")).not.toBe(trendHex("down", "light"));
+    expect(trendHex("up", "dark")).toMatch(/^#[0-9a-f]{6}$/);
   });
 });

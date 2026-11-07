@@ -113,7 +113,7 @@
   bottom: var(--space-xl);
   width: min(360px, calc(100% - 48px));
   padding: var(--space-xl);
-  background: var(--primary);
+  background: var(--panel);
   color: var(--on-dark);
   border: 1px solid var(--dark-rule);
   border-radius: var(--radius-sm);
@@ -270,11 +270,11 @@
 .route-pill:hover {
   border-color: var(--primary);
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .route-pill:hover .mono {
-  color: var(--on-dark-muted);
+  color: color-mix(in srgb, var(--on-primary) 62%, transparent);
 }
 
 /* ---------- 技術條（trust strip 風格，安靜、寬間距） ---------- */
@@ -583,7 +583,7 @@
 .tag-chip--dark {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 /* ---------- 規格表（research-table 風格） ---------- */

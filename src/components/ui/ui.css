@@ -253,7 +253,7 @@
 
 .calendar__day.is-selected {
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .calendar__day.is-preview {
@@ -347,7 +347,7 @@
 .paxpicker__cabin[aria-checked="true"] {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 /* ---------- 範圍滑桿 ---------- */

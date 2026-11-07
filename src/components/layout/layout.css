@@ -4,7 +4,7 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  background: rgb(255 255 255 / 0.94);
+  background: color-mix(in srgb, var(--canvas) 94%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-light);
 }
@@ -69,7 +69,7 @@
 .navbar__tab[aria-current="page"] {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .navbar__count {
@@ -132,14 +132,14 @@
   gap: var(--space-xs);
 }
 
-.prefs__lang {
+.prefs__seg {
   display: inline-flex;
   padding: 2px;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-full);
 }
 
-.prefs__lang button {
+.prefs__seg button {
   min-width: 36px;
   min-height: 32px;
   padding: 0 8px;
@@ -150,13 +150,30 @@
   font-size: var(--text-micro);
 }
 
-.prefs__lang button[aria-checked="true"] {
+.prefs__seg button[aria-checked="true"] {
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
-.prefs__lang:hover {
+.prefs__seg:hover {
   border-color: var(--primary);
+}
+
+.prefs__theme button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 32px;
+  padding: 0 6px;
+}
+
+.prefs__icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .navbar__menu-prefs {
@@ -167,7 +184,12 @@
   padding-top: var(--space-md);
 }
 
-.prefs--menu .prefs__lang button {
+.prefs--menu {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.prefs--menu .prefs__seg button {
   min-height: 40px;
   min-width: 48px;
 }
@@ -274,6 +296,7 @@
 
   /* 空間有限：金鑰按鈕只留狀態圓點（完整文字在 aria-label） */
   .navbar__end .keychip {
+    flex: none;
     width: 44px;
     padding: 0;
     justify-content: center;
@@ -286,6 +309,11 @@
 
 /* 窄平板：分頁列放不下外部連結，改由頁尾提供 */
 @media (max-width: 860px) {
+  .prefs__theme button {
+    min-width: 28px;
+    padding: 0 4px;
+  }
+
   .navbar__tab--external {
     display: none;
   }
@@ -311,7 +339,7 @@
 /* ---------- 底部頁尾列 ---------- */
 
 .footbar {
-  background: var(--primary);
+  background: var(--panel);
   color: var(--on-dark-muted);
   font-size: var(--text-caption);
 }

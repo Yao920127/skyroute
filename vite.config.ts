@@ -16,6 +16,7 @@ export default defineConfig({
       "backend/**",
       "dist/**",
       "public/apidocs*",
+      "public/theme-init.js",
       "floorplan-site/**",
       "project.md",
       "DESIGN.md",
@@ -23,7 +24,13 @@ export default defineConfig({
     ],
   },
   lint: {
-    ignorePatterns: ["backend/**", "dist/**", "public/apidocs*", "floorplan-site/**"],
+    ignorePatterns: [
+      "backend/**",
+      "dist/**",
+      "public/apidocs*",
+      "public/theme-init.js",
+      "floorplan-site/**",
+    ],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },

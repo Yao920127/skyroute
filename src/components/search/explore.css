@@ -135,7 +135,7 @@
 .sortbar__item[aria-pressed="true"] {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 /* 細線分隔的清單（research-table 風格） */
@@ -166,7 +166,7 @@
 }
 
 .offer:hover {
-  background: #fafaf8;
+  background: var(--surface-subtle);
 }
 
 .offer--skeleton {
@@ -233,7 +233,7 @@
 .tag--best_value {
   background: var(--primary);
   border-color: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .offer__slices {
@@ -403,11 +403,11 @@
 
 .ticket-mode button[aria-checked="true"] {
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .ticket-mode button[aria-checked="true"] small {
-  color: var(--on-dark-muted);
+  color: color-mix(in srgb, var(--on-primary) 62%, transparent);
 }
 
 .offer__original {
@@ -444,7 +444,7 @@
 .split__warn {
   padding: var(--space-sm) var(--space-md);
   border-left: 2px solid var(--coral);
-  background: #fff6f3;
+  background: var(--warn-wash);
 }
 
 .split__leg {
@@ -525,7 +525,7 @@
 
 .split__option.is-selected {
   border-color: var(--primary);
-  background: #fafaf8;
+  background: var(--surface-subtle);
 }
 
 .split__pick {
@@ -608,7 +608,7 @@
   justify-content: space-between;
   gap: var(--space-md) var(--space-xl);
   padding: var(--space-lg) var(--space-xl);
-  background: var(--primary);
+  background: var(--panel);
   color: var(--on-dark);
   border-radius: var(--radius-md);
   box-shadow: 0 16px 32px -16px rgb(0 0 0 / 0.5);
@@ -803,7 +803,7 @@
     z-index: 30;
     margin: 0 calc(clamp(16px, 3vw, 40px) * -1);
     padding: var(--space-sm) clamp(16px, 3vw, 40px);
-    background: rgb(255 255 255 / 0.96);
+    background: color-mix(in srgb, var(--canvas) 96%, transparent);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border-light);
   }

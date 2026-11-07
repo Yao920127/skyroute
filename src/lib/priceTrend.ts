@@ -3,6 +3,8 @@
  * 降價對旅客是好消息 → 綠；漲價 → 紅；持平 → 灰。
  */
 
+import type { ResolvedTheme } from "./theme.ts";
+
 export type PriceTrend = "down" | "up" | "flat" | "none";
 
 export function priceTrend(values: number[]): PriceTrend {
@@ -20,10 +22,12 @@ export const TREND_VAR: Record<PriceTrend, string> = {
   none: "var(--muted)",
 };
 
-/** canvas 讀不到 CSS 變數，用同一組色碼（--gain、--loss／--error、--muted） */
-export const TREND_HEX: Record<PriceTrend, string> = {
-  down: "#0b7a5c",
-  up: "#b30000",
-  flat: "#93939f",
-  none: "#93939f",
+/** canvas 讀不到 CSS 變數，用同一組色碼（--gain、--loss／--error、--muted，亮暗各一組） */
+const TREND_HEX: Record<ResolvedTheme, Record<PriceTrend, string>> = {
+  light: { down: "#0b7a5c", up: "#b30000", flat: "#93939f", none: "#93939f" },
+  dark: { down: "#3cc79a", up: "#ff6b66", flat: "#8a8a96", none: "#8a8a96" },
 };
+
+export function trendHex(trend: PriceTrend, theme: ResolvedTheme): string {
+  return TREND_HEX[theme][trend];
+}

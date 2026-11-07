@@ -109,7 +109,7 @@
   padding: 0 8px;
   border-radius: var(--radius-full);
   background: var(--primary);
-  color: var(--on-dark);
+  color: var(--on-primary);
 }
 
 .heat__cell {
