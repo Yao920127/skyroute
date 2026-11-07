@@ -612,6 +612,10 @@
   font-size: var(--text-body);
 }
 
+.specs__map {
+  margin-top: var(--space-lg);
+}
+
 .pill-outline {
   padding: 3px 12px;
   border: 1px solid var(--hairline);
