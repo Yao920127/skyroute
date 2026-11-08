@@ -5,7 +5,7 @@ import type { MessageKey } from "../../i18n/messages.ts";
 import { addDays } from "../../lib/format.ts";
 import { defaultSearchState, serializeSearchState } from "../../lib/searchState.ts";
 import type { SearchState } from "../../lib/types.ts";
-import { ARCHITECTURE_MAP_URL } from "../layout/Navbar.tsx";
+import { ARCHITECTURE_MAP_URL, PRESENTATION_URL } from "../layout/Navbar.tsx";
 import { HeroMedia } from "./HeroMedia.tsx";
 
 type Props = {
@@ -76,6 +76,9 @@ export function HomePage({ trackingCount, onNavigate }: Props) {
           <button type="button" className="btn btn--ghost" onClick={() => onNavigate("board")}>
             {trackingCount > 0 ? t("home.ctaBoardN", { n: trackingCount }) : t("home.ctaBoard")}
           </button>
+          <a className="btn btn--ghost" href={PRESENTATION_URL} target="_blank" rel="noopener">
+            {t("home.presentation")} ↗<span className="visually-hidden">{t("common.newTab")}</span>
+          </a>
           <a
             className="btn btn--ghost"
             href={ARCHITECTURE_MAP_URL}

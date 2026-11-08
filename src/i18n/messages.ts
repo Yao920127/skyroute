@@ -89,6 +89,7 @@ export const zh = {
   "footer.docs": "Duffel API 文件 ↗",
   "footer.apiGuide": "SkyRoute 的 Duffel 串接指南 ↗",
   "footer.archMap": "SkyRoute 系統架構圖 ↗",
+  "footer.presentation": "SkyRoute 產品簡報 ↗",
   "footer.legal": "報價資料來源：Duffel Flights API；測試環境為模擬資料，僅供查詢不提供訂位。",
   "footer.ops": "每日 03:00（台北）巡檢 · 快取 30 分鐘",
   "announce.test":
@@ -429,6 +430,7 @@ export const zh = {
   "home.cta": "開始搜尋航班",
   "home.ctaBoard": "看看看盤清單怎麼運作",
   "home.archMap": "系統架構圖",
+  "home.presentation": "產品簡報",
   "home.ctaBoardN": "回到看盤清單（{n} 檔追蹤中）",
   "home.routes": "從台北出發 · 一鍵查詢",
   "home.routesAria": "熱門航線",
@@ -609,6 +611,7 @@ export const en: Record<MessageKey, string> = {
   "footer.docs": "Duffel API docs ↗",
   "footer.apiGuide": "SkyRoute Duffel integration guide ↗",
   "footer.archMap": "SkyRoute architecture map ↗",
+  "footer.presentation": "SkyRoute product deck ↗",
   "footer.legal":
     "Fares from the Duffel Flights API. Test mode returns simulated data; search only, no booking.",
   "footer.ops": "Daily check 03:00 (Taipei) · 30-min cache",
@@ -952,6 +955,7 @@ export const en: Record<MessageKey, string> = {
   "home.cta": "Search flights",
   "home.ctaBoard": "See how the watchboard works",
   "home.archMap": "Architecture map",
+  "home.presentation": "Product deck",
   "home.ctaBoardN": "Back to your watchboard ({n} active)",
   "home.routes": "From Taipei · one tap",
   "home.routesAria": "Popular routes",

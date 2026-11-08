@@ -29,6 +29,9 @@ export const NAV_ITEMS: { id: Exclude<View, "home">; labelKey: MessageKey }[] = 
 /** Duffel 串接指南（public/apidocs.html），一律在新分頁開啟 */
 export const API_GUIDE_URL = "/apidocs";
 
+/** 產品簡報（public/presentation.html，由 nginx 以 /presentation 提供），一律在新分頁開啟 */
+export const PRESENTATION_URL = "/presentation";
+
 /** 系統架構圖（floorplan 匯出版，Railway 的 floorplan 服務），一律在新分頁開啟 */
 export const ARCHITECTURE_MAP_URL = "https://floorplan-skyroute.up.railway.app";
 
