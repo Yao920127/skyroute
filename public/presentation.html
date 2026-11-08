@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW" data-view-mode="deck">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SkyRoute · 智慧機票探索與低價看盤監控系統 — 產品與技術架構簡報</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <script src="./theme-init.js"></script>
+  <style>
+    /* ==========================================================================
+       設計系統 Token（依 DESIGN.md、src/styles/tokens.css 與 adaptive.css 實作）
+       ========================================================================== */
+    :root {
+      --primary: #17171c;
+      --black: #000000;
+      --ink: #212121;
+      --deep-green: #003c33;
+      --dark-navy: #071829;
+      --action-blue: #1863dc;
+      --coral: #ff7759;
+      --coral-soft: #ffad9b;
+
+      --canvas: #ffffff;
+      --soft-stone: #eeece7;
+      --pale-green: #edfce9;
+      --pale-blue: #f1f5ff;
+      --surface-subtle: #fafaf8;
+
+      --muted: #93939f;
+      --slate: #75758a;
+      --body-muted: #595963;
+      --hairline: #d9d9dd;
+      --border-light: #e5e7eb;
+
+      --gain: #0b7a5c;
+      --gain-wash: #edfce9;檢查整個專案，並且校正 @public/presentation.html
+      --loss: #b30000;
+      --loss-wash: #fbeeee;
+
+      --on-primary: #ffffff;
+      --on-dark: #ffffff;
+      --on-dark-muted: rgba(255, 255, 255, 0.74);
+      --dark-rule: rgba(255, 255, 255, 0.16);
+      --dark-surface: rgba(255, 255, 255, 0.07);
+
+      --font-display: "Space Grotesk", "Inter", "PingFang TC", "Noto Sans TC", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: "Inter", "PingFang TC", "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif;
+      --font-mono: "IBM Plex Mono", "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-pill: 32px;
+      --radius-full: 9999px;
+
+      --topbar-h: 62px;
+      --bottombar-h: 58px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    :root[data-theme="dark"] {
+      --primary: #f2f1ec;
+      --ink: #e6e6e3;
+      --deep-green: #0c4a3f;
+      --dark-navy: #0a1f36;
+      --action-blue: #6ea0ff;
+
+      --canvas: #111214;
+      --soft-stone: #1d1e22;
+      --pale-green: #0e2a22;
+      --pale-blue: #121c2e;
+      --surface-subtle: #16171a;
+
+      --muted: #8a8a96;
+      --slate: #a0a0b2;
+      --body-muted: #b2b2ba;
+      --hairline: #2e3036;
+      --border-light: #26272c;
+
+      --gain: #3cc79a;
+      --gain-wash: #0e2a22;
+      --loss: #ff6b66;
+      --loss-wash: #3a1d1d;
+
+      --on-primary: #17171c;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--topbar-h) + 16px);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.55;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--hairline);
+    }
+    a:hover {
+      text-decoration-color: var(--ink);
+    }
+
+    code, pre, .mono {
+      font-family: var(--font-mono);
+    }
+
+    :not(pre) > code {
+      font-size: 0.86em;
+      padding: 2px 7px;
+      border-radius: var(--radius-xs);
+      background: var(--soft-stone);
+      border: 1px solid var(--hairline);
+      color: var(--ink);
+      font-weight: 500;
+      word-break: break-word;
+    }
+
+    .card--green :not(pre) > code,
+    .card--navy :not(pre) > code,
+    .arch-diagram :not(pre) > code,
+    .formula-box :not(pre) > code {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+    }
+
+    /* ==========================================================================
+       頂部控制列（Topbar）與進度條 — 支援桌機／平板／手機三端自適應
+       ========================================================================== */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      height: var(--topbar-h);
+      background: var(--canvas);
+      border-bottom: 1px solid var(--hairline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(12px, 2.5vw, 28px);
+      gap: 10px;
+    }
+
+    .topbar__start,
+    .topbar__center,
+    .topbar__end {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .brand__mark {
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-full);
+      background: var(--primary);
+      color: var(--on-primary);
+      display: inline-grid;
+      place-items: center;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .brand__tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 2px 8px;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+
+    .ctrl-btn {
+      appearance: none;
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-full);
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.2;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      text-decoration: none;
+      transition: background 140ms ease, border-color 140ms ease;
+    }
+
+    .ctrl-btn:hover:not(:disabled) {
+      background: var(--soft-stone);
+      border-color: var(--muted);
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    .ctrl-btn[aria-pressed="true"],
+    .ctrl-btn[aria-pressed="true"]:hover:not(:disabled) {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+    }
+
+    .seg-group {
+      display: inline-flex;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-full);
+      padding: 2px;
+      gap: 2px;
+      background: var(--surface-subtle);
+    }
+
+    .seg-group button {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--body-muted);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .seg-group button:hover {
+      color: var(--ink);
+    }
+
+    .seg-group button[aria-pressed="true"] {
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 500;
+    }
+
+    /* 手機／平板專屬「設定與版型」按鈕（桌機隱藏，平板／手機顯示） */
+    .prefs-trigger {
+      display: none;
+    }
+
+    .progress-track {
+      position: fixed;
+      top: var(--topbar-h);
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: transparent;
+      z-index: 49;
+      pointer-events: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 8.33%;
+      background: var(--coral);
+      transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* ==========================================================================
+       側邊章節目錄抽屜（TOC Drawer）与手機底部設定抽屜（Bottom Sheet）
+       ========================================================================== */
+    .toc-backdrop,
+    .prefs-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.48);
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+
+    .toc-drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(88vw, 380px);
+      background: var(--canvas);
+      border-right: 1px solid var(--hairline);
+      z-index: 61;
+      transform: translateX(-102%);
+      transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    body.toc-open .toc-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.toc-open .toc-drawer {
+      transform: translateX(0);
+    }
+
+    .toc-drawer__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .toc-drawer__title {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .toc-drawer__list {
+      list-style: none;
+      margin: 0;
+      padding: 14px 16px calc(20px + var(--safe-bottom));
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .toc-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      text-decoration: none;
+      color: var(--body-muted);
+      font-size: 14px;
+      transition: background 140ms ease, color 140ms ease;
+    }
+
+    .toc-link:hover {
+      background: var(--soft-stone);
+      color: var(--ink);
+    }
+
+    .toc-link.is-active {
+      background: var(--soft-stone);
+      border-color: var(--hairline);
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .toc-link__num {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--coral);
+      flex-shrink: 0;
+    }
+
+    /* 手機／平板底部抽屜（依 src/styles/adaptive.css 規範設計） */
+    .prefs-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 62;
+      background: var(--canvas);
+      border-top: 1px solid var(--hairline);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 10px 20px calc(24px + var(--safe-bottom));
+      max-width: 640px;
+      margin: 0 auto;
+      transform: translateY(104%);
+      transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 -16px 36px rgba(0, 0, 0, 0.22);
+    }
+
+    body.prefs-open .prefs-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.prefs-open .prefs-sheet {
+      transform: translateY(0);
+    }
+
+    .prefs-sheet__grip {
+      width: 40px;
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: var(--hairline);
+      margin: 2px auto 4px;
+    }
+
+    .prefs-sheet__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--hairline);
+      padding-bottom: 10px;
+    }
+
+    .prefs-sheet__row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .prefs-sheet__label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .prefs-sheet .seg-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+      width: 100%;
+    }
+
+    .prefs-sheet .seg-group button,
+    .prefs-sheet .ctrl-btn {
+      min-height: 44px;
+      font-size: 13.5px;
+    }
+
+    /* ==========================================================================
+       投影片主舞台（純 CSS 自適應桌機／平板／手機）
+       ========================================================================== */
+    .deck-stage {
+      width: 100%;
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 clamp(16px, 4vw, 56px) calc(var(--bottombar-h) + 28px);
+    }
+
+    .slide {
+      padding: clamp(22px, 3vw, 40px) 0 clamp(28px, 3.5vw, 44px);
+      min-width: 0;
+    }
+
+    /* 簡報模式：由 presentation.js 依視窗大小計算 --deck-zoom，讓每頁盡量填滿畫面 */
+    html[data-view-mode="deck"] .deck-stage {
+      zoom: var(--deck-zoom, 1);
+      max-width: 1440px;
+    }
+
+    html[data-view-mode="deck"] .slide {
+      display: none;
+      min-height: calc((100dvh - var(--topbar-h) - var(--bottombar-h) - 28px) / var(--deck-zoom, 1));
+    }
+
+    html[data-view-mode="deck"] .slide.is-active {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      animation: slideFadeIn 240ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    html[data-view-mode="scroll"] .slide {
+      display: block;
+      border-bottom: 1px solid var(--hairline);
+      padding: clamp(32px, 5vw, 72px) 0;
+    }
+
+    html[data-view-mode="scroll"] .slide:last-of-type {
+      border-bottom: 0;
+      padding-bottom: 110px;
+    }
+
+    @keyframes slideFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ==========================================================================
+       投影片共用排版與元件
+       ========================================================================== */
+    .slide-header {
+      margin-bottom: clamp(16px, 2.5vw, 28px);
+    }
+
+    .slide-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--coral);
+    }
+
+    .pill-tag {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--hairline);
+      color: var(--body-muted);
+      background: var(--surface-subtle);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pill-tag--green {
+      background: var(--gain-wash);
+      color: var(--gain);
+      border-color: transparent;
+    }
+
+    .pill-tag--coral {
+      background: rgba(255, 119, 89, 0.12);
+      color: var(--coral);
+      border-color: rgba(255, 119, 89, 0.35);
+    }
+
+    .pill-tag--blue {
+      background: var(--pale-blue);
+      color: var(--action-blue);
+      border-color: transparent;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(28px, 4vw, 56px);
+      line-height: 1.24;
+      letter-spacing: -0.015em;
+      padding-top: 2px;
+      margin: 0 0 14px;
+    }
+
+    .slide-title {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(22px, 2.8vw, 38px);
+      line-height: 1.28;
+      letter-spacing: -0.015em;
+      padding-top: 2px;
+      margin: 0 0 10px;
+    }
+
+    .slide-lead {
+      font-size: clamp(14.5px, 1.3vw, 17.5px);
+      color: var(--body-muted);
+      max-width: 82ch;
+      margin: 0;
+      line-height: 1.65;
+    }
+
+    /* 網格系統（全面防橫向溢位：minmax(0, 1fr) + min-width: 0） */
+    .grid-2,
+    .grid-3,
+    .grid-4,
+    .hero-split {
+      display: grid;
+      gap: clamp(14px, 1.8vw, 22px);
+      min-width: 0;
+    }
+
+    .grid-2 > *,
+    .grid-3 > *,
+    .grid-4 > *,
+    .hero-split > * {
+      min-width: 0;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .hero-split {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+      align-items: stretch;
+    }
+
+    /* 卡片與區塊 */
+    .card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      padding: clamp(16px, 2vw, 24px);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card--stone {
+      background: var(--soft-stone);
+      border-color: transparent;
+    }
+
+    .card--green {
+      background: var(--deep-green);
+      color: var(--on-dark);
+      border-color: transparent;
+      border-radius: var(--radius-lg);
+    }
+
+    .card--navy {
+      background: var(--dark-navy);
+      color: var(--on-dark);
+      border-color: transparent;
+      border-radius: var(--radius-lg);
+    }
+
+    .card--green .muted,
+    .card--navy .muted {
+      color: var(--on-dark-muted);
+    }
+
+    .card__num {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .card__title {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(17px, 1.45vw, 21px);
+      line-height: 1.38;
+      margin: 0;
+    }
+
+    .card__body {
+      margin: 0;
+      color: var(--body-muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .card--green .card__body,
+    .card--navy .card__body {
+      color: var(--on-dark-muted);
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 2.6vw, 38px);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin: 2px 0;
+    }
+
+    .check-list {
+      list-style: none;
+      margin: 2px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 13.8px;
+    }
+
+    .check-list li {
+      position: relative;
+      padding-left: 18px;
+      line-height: 1.52;
+    }
+
+    .check-list li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      top: 0;
+      font-family: var(--font-mono);
+      color: var(--coral);
+    }
+
+    .card--green .check-list li::before,
+    .card--navy .check-list li::before {
+      color: var(--coral-soft);
+    }
+
+    /* 公式與終端模擬面板 */
+    .formula-box {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-radius: var(--radius-md);
+      padding: clamp(16px, 2vw, 24px);
+      font-family: var(--font-mono);
+      font-size: clamp(12.5px, 1.2vw, 15px);
+      line-height: 1.75;
+    }
+
+    :root[data-theme="dark"] .formula-box {
+      background: #1a1c22;
+      color: #ffffff;
+      border: 1px solid var(--hairline);
+    }
+
+    .formula-box em {
+      font-style: normal;
+      color: var(--coral);
+    }
+
+    /* 架構圖與流程步驟視覺化 */
+    .arch-diagram {
+      background: var(--deep-green);
+      color: var(--on-dark);
+      border-radius: var(--radius-lg);
+      padding: clamp(16px, 2.2vw, 26px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .arch-tier {
+      background: var(--dark-surface);
+      border: 1px solid var(--dark-rule);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .arch-tier__label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--coral-soft);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .arch-nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .arch-node {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid var(--dark-rule);
+      border-radius: var(--radius-xs);
+      padding: 10px 12px;
+    }
+
+    .arch-node strong {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 500;
+      margin-bottom: 3px;
+      color: #ffffff;
+    }
+
+    .arch-node span {
+      display: block;
+      font-size: 12px;
+      color: var(--on-dark-muted);
+      line-height: 1.45;
+    }
+
+    .arch-arrow {
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--on-dark-muted);
+      line-height: 1.2;
+    }
+
+    .mod-tag {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: var(--radius-xs);
+      background: var(--soft-stone);
+      color: var(--ink);
+      border: 1px solid var(--hairline);
+      margin-right: 6px;
+    }
+
+    /* 管線流程清單 */
+    .pipeline-steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pipeline-step {
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--hairline);
+      background: var(--surface-subtle);
+    }
+
+    .pipeline-step__idx {
+      width: 30px;
+      height: 30px;
+      border-radius: var(--radius-full);
+      background: var(--primary);
+      color: var(--on-primary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      display: grid;
+      place-items: center;
+    }
+
+    .pipeline-step strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .pipeline-step p strong {
+      display: inline;
+      font-size: inherit;
+      margin-bottom: 0;
+    }
+
+    .pipeline-step p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--body-muted);
+    }
+
+    /* 響應式表格容器（桌機：多欄表格；平板：緊湊表格；手機：自動轉為堆疊式卡片） */
+    .table-scroll {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-sm);
+      background: var(--canvas);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    table.data-table th,
+    table.data-table td {
+      text-align: left;
+      padding: 9px 13px;
+      border-bottom: 1px solid var(--hairline);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+
+    table.data-table th {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--surface-subtle);
+      white-space: nowrap;
+    }
+
+    table.data-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .http-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--hairline);
+      display: inline-block;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .http-badge--get {
+      background: var(--pale-blue);
+      color: var(--action-blue);
+      border-color: transparent;
+    }
+
+    .http-badge--post {
+      background: var(--gain-wash);
+      color: var(--gain);
+      border-color: transparent;
+    }
+
+    .http-badge--mut {
+      background: rgba(255, 119, 89, 0.14);
+      color: var(--coral);
+      border-color: rgba(255, 119, 89, 0.35);
+    }
+
+    /* 7x7 價格矩陣迷你示意圖 */
+    .mini-matrix {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .mini-cell {
+      padding: 7px 5px;
+      border-radius: var(--radius-xs);
+      text-align: center;
+      border: 1px solid var(--hairline);
+      background: var(--soft-stone);
+      color: var(--ink);
+    }
+
+    .mini-cell--low {
+      background: var(--gain);
+      color: #ffffff;
+      border-color: transparent;
+      font-weight: 500;
+    }
+
+    .mini-cell--high {
+      background: rgba(255, 119, 89, 0.22);
+      border-color: rgba(255, 119, 89, 0.45);
+    }
+
+    /* 後端／資料庫架構頁專用元件 */
+    .layer-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .layer {
+      border: 1px solid var(--hairline);
+      border-left: 4px solid var(--coral);
+      border-radius: var(--radius-sm);
+      background: var(--canvas);
+      padding: 12px 16px;
+    }
+
+    .layer--svc { border-left-color: #3b6fd4; margin-left: 14px; }
+    .layer--dom { border-left-color: #2f8f5b; margin-left: 28px; }
+    .layer--int { border-left-color: var(--muted); margin-left: 42px; }
+
+    .layer__head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 10px;
+    }
+
+    .layer__head strong {
+      font-family: var(--font-mono);
+      font-size: 15px;
+    }
+
+    .layer__head span {
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .layer p {
+      margin: 4px 0 8px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: var(--body-muted);
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip-row code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      padding: 2px 8px;
+      border: 1px solid var(--hairline);
+      border-radius: 999px;
+      background: var(--soft-stone);
+    }
+
+    .endpoint-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    .endpoint-table th {
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 4px 8px 6px 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .endpoint-table td {
+      padding: 5px 8px 5px 0;
+      border-bottom: 1px solid var(--hairline);
+      vertical-align: top;
+    }
+
+    .endpoint-table td:nth-child(1) {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--coral);
+      white-space: nowrap;
+    }
+
+    .endpoint-table td:nth-child(2) {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      overflow-wrap: anywhere;
+    }
+
+    .flow-list {
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .flow-list li {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .flow-list li b {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: var(--canvas);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .flow-list code,
+    .check-list code {
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+      overflow-wrap: anywhere;
+    }
+
+    .er-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: clamp(12px, 1.4vw, 18px);
+    }
+
+    .er-grid > * { min-width: 0; grid-column: span 2; }
+    .er-grid > .table-card--wide { grid-column: span 3; }
+
+    .table-card {
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-md);
+      background: var(--canvas);
+      overflow: hidden;
+    }
+
+    .table-card__head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 2px 10px;
+      padding: 9px 14px;
+      background: var(--deep-green);
+      color: var(--on-dark);
+    }
+
+    .table-card__head code {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .table-card__head span {
+      font-size: 12px;
+      color: var(--on-dark-muted);
+    }
+
+    .col-list {
+      list-style: none;
+      margin: 0;
+      padding: 4px 14px 8px;
+    }
+
+    .col-list li {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 10px;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--hairline);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .col-list li:last-child { border-bottom: 0; }
+
+    .col-list li > code {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      overflow-wrap: anywhere;
+    }
+
+    .col-list li > span { color: var(--body-muted); }
+
+    .layer code,
+    .flow-list code,
+    .check-list code,
+    .col-list code,
+    .endpoint-table code,
+    .rel-note code,
+    .rel-node code,
+    .card__body code {
+      background: none;
+      border: 0;
+      padding: 0;
+    }
+
+    .chip-row code {
+      background: var(--soft-stone);
+      border: 1px solid var(--hairline);
+      padding: 2px 8px;
+    }
+
+    .table-card__head code {
+      background: none;
+      border: 0;
+      padding: 0;
+      color: inherit;
+    }
+
+    .rel-diagram {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.2fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .rel-node {
+      border: 1px solid var(--hairline);
+      border-radius: var(--radius-sm);
+      background: var(--canvas);
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .rel-node--core {
+      background: var(--deep-green);
+      color: var(--on-dark);
+      border-color: transparent;
+    }
+
+    .rel-node code {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .rel-node--core code {
+      color: inherit;
+    }
+
+    .rel-node span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .rel-node--core span {
+      color: var(--on-dark-muted);
+    }
+
+    .rel-edge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--coral);
+      text-align: center;
+    }
+
+    .rel-edge small {
+      font-size: 10.5px;
+      color: var(--muted);
+      max-width: 9em;
+    }
+
+    .rel-note {
+      margin: 0 0 clamp(14px, 1.8vw, 22px);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--body-muted);
+    }
+
+    @media (max-width: 1024px) {
+      .rel-diagram {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .rel-edge { flex-direction: row; gap: 8px; justify-content: flex-start; }
+    }
+
+    @media (max-width: 1024px) {
+      .er-grid > *,
+      .er-grid > .table-card--wide { grid-column: span 3; }
+      .layer--svc, .layer--dom, .layer--int { margin-left: 0; }
+    }
+
+    @media (max-width: 640px) {
+      .er-grid { grid-template-columns: minmax(0, 1fr); }
+      .er-grid > *,
+      .er-grid > .table-card--wide { grid-column: auto; }
+      .col-list li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    }
+
+    /* ==========================================================================
+       底部簡報控制列（Bottom Navigation Bar）
+       ========================================================================== */
+    .bottombar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      min-height: var(--bottombar-h);
+      background: var(--canvas);
+      border-top: 1px solid var(--hairline);
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px clamp(12px, 3vw, 32px) calc(6px + var(--safe-bottom));
+      gap: 12px;
+    }
+
+    .slide-dots {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      max-width: 55vw;
+      padding: 4px 0;
+    }
+
+    .slide-dot {
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--muted);
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 160ms ease;
+    }
+
+    .slide-dot:hover {
+      border-color: var(--ink);
+    }
+
+    .slide-dot.is-active {
+      width: 26px;
+      background: var(--coral);
+      border-color: var(--coral);
+    }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .slide-counter {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--body-muted);
+      min-width: 64px;
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       平板版 RWD（Tablet: 641px–1024px）
+       ========================================================================== */
+    @media (max-width: 1024px) {
+      .grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .hero-split {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .brand__tag,
+      .only-desktop {
+        display: none !important;
+      }
+      .prefs-trigger {
+        display: inline-flex;
+      }
+      .ctrl-btn,
+      .seg-group button {
+        min-height: 40px;
+      }
+      table.data-table th,
+      table.data-table td {
+        padding: 8px 10px;
+        font-size: 12.5px;
+      }
+    }
+
+    /* ==========================================================================
+       手機版 RWD（Mobile: ≤ 640px）
+       - 單欄堆疊卡片、44px+ 觸控目標、表格自動轉為手機版 Key-Value 卡片
+       ========================================================================== */
+    @media (max-width: 640px) {
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .hero-split,
+      .arch-nodes {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .only-desktop,
+      .only-tablet-up {
+        display: none !important;
+      }
+      .prefs-trigger {
+        display: inline-flex;
+      }
+      .ctrl-btn {
+        min-height: 42px;
+        padding: 6px 12px;
+      }
+      .slide-dots {
+        display: none;
+      }
+      .bottombar {
+        justify-content: center;
+      }
+      .nav-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .nav-controls .ctrl-btn {
+        flex: 1;
+        min-height: 44px;
+        font-weight: 500;
+      }
+      .mini-matrix {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      /* 手機版：將寬表格轉為直向卡片清單，徹底消除水平捲軸 */
+      .table-scroll {
+        border: 0;
+        background: transparent;
+        overflow-x: visible;
+      }
+      table.data-table,
+      table.data-table tbody {
+        display: block;
+        width: 100%;
+      }
+      table.data-table thead {
+        display: none;
+      }
+      table.data-table tr {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: var(--canvas);
+        border: 1px solid var(--hairline);
+        border-radius: var(--radius-md);
+        padding: 14px 16px;
+        margin-bottom: 12px;
+      }
+      table.data-table td {
+        display: block;
+        padding: 0;
+        border-bottom: 0;
+        font-size: 13.5px;
+      }
+      table.data-table td::before {
+        content: attr(data-label);
+        display: block;
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+    }
+
+    @media print {
+      .topbar,
+      .bottombar,
+      .progress-track,
+      .toc-drawer,
+      .toc-backdrop,
+      .prefs-sheet,
+      .prefs-backdrop {
+        display: none !important;
+      }
+      html[data-view-mode="deck"] .deck-stage {
+        zoom: 1;
+      }
+      html[data-view-mode="deck"] .slide,
+      html[data-view-mode="scroll"] .slide {
+        display: block !important;
+        min-height: auto;
+        page-break-after: always;
+        padding: 24px 0;
+        border-bottom: 1px solid #ccc;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 頂部導覽與控制列 -->
+  <header class="topbar">
+    <div class="topbar__start">
+      <button type="button" class="ctrl-btn" id="toc-btn" aria-expanded="false" aria-controls="toc-drawer">
+        <span aria-hidden="true">☰</span>
+        <span>目錄</span>
+      </button>
+      <a href="/" class="brand" title="返回 SkyRoute 首頁">
+        <span class="brand__mark" aria-hidden="true">↗</span>
+        <span>SkyRoute</span>
+      </a>
+      <span class="brand__tag">PRODUCT &amp; ARCHITECTURE</span>
+    </div>
+
+    <div class="topbar__end">
+      <button type="button" class="ctrl-btn js-mode-btn only-tablet-up" aria-pressed="true" title="切換投影片簡報模式／長頁捲動模式（快捷鍵 M）">
+        <span class="mode-label">簡報模式</span>
+      </button>
+      <div class="seg-group only-desktop" role="group" aria-label="配色模式">
+        <button type="button" data-theme-set="system" aria-pressed="true">系統</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">亮色</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">暗色</button>
+      </div>
+      <button type="button" class="ctrl-btn only-desktop" id="fs-btn" title="切換全螢幕">
+        <span>全螢幕</span>
+      </button>
+      <a href="https://floorplan-skyroute.up.railway.app" target="_blank" rel="noopener noreferrer" class="ctrl-btn only-desktop">
+        <span>架構圖 ↗</span>
+      </a>
+      <a href="./apidocs.html" target="_blank" rel="noopener" class="ctrl-btn only-desktop">
+        <span>API ↗</span>
+      </a>
+      <!-- 平板／手機顯示的底部抽屜觸發鈕 -->
+      <button type="button" class="ctrl-btn prefs-trigger" id="prefs-btn" aria-expanded="false" aria-controls="prefs-sheet">
+        <span aria-hidden="true">⚙</span>
+        <span>設定</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="progress-track" aria-hidden="true">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <!-- 側邊目錄抽屜 -->
+  <div class="toc-backdrop" id="toc-backdrop" aria-hidden="true"></div>
+  <aside class="toc-drawer" id="toc-drawer" aria-label="簡報章節目錄">
+    <div class="toc-drawer__head">
+      <h2 class="toc-drawer__title">SLIDES · 簡報章節（共 14 頁）</h2>
+      <button type="button" class="ctrl-btn" id="toc-close" aria-label="關閉目錄">✕</button>
+    </div>
+    <ol class="toc-drawer__list">
+      <li><a href="#slide-1" class="toc-link"><span class="toc-link__num">01</span><span>SkyRoute 是什麼？我們解決什麼痛點</span></a></li>
+      <li><a href="#slide-2" class="toc-link"><span class="toc-link__num">02</span><span>專案動機：24 小時雲端 AI × 自動搶票藍圖</span></a></li>
+      <li><a href="#slide-3" class="toc-link"><span class="toc-link__num">03</span><span>三大核心功能：找票、比價、自動盯價</span></a></li>
+      <li><a href="#slide-4" class="toc-link"><span class="toc-link__num">04</span><span>聰明挑選機制：怎麼幫你找出最划算機票？</span></a></li>
+      <li><a href="#slide-5" class="toc-link"><span class="toc-link__num">05</span><span>系統架構全貌：三層分工如何合作？</span></a></li>
+      <li><a href="#slide-6" class="toc-link"><span class="toc-link__num">06</span><span>後端技術架構：四層分工與依賴方向</span></a></li>
+      <li><a href="#slide-7" class="toc-link"><span class="toc-link__num">07</span><span>API 端點與兩條核心資料流</span></a></li>
+      <li><a href="#slide-8" class="toc-link"><span class="toc-link__num">08</span><span>資料庫架構：PostgreSQL 資料表與 Redis 快取</span></a></li>
+      <li><a href="#slide-9" class="toc-link"><span class="toc-link__num">09</span><span>資料關聯、索引、結構演進與 Redis</span></a></li>
+      <li><a href="#slide-10" class="toc-link"><span class="toc-link__num">10</span><span>前端體驗設計：為什麼操作起來這麼順手？</span></a></li>
+      <li><a href="#slide-11" class="toc-link"><span class="toc-link__num">11</span><span>跨裝置自適應：手機、平板、電腦都好讀</span></a></li>
+      <li><a href="#slide-12" class="toc-link"><span class="toc-link__num">12</span><span>後端加速與巡邏：為什麼查價又快又省資源？</span></a></li>
+      <li><a href="#slide-13" class="toc-link"><span class="toc-link__num">13</span><span>帳號安全與品質保障：安心使用不漏接</span></a></li>
+      <li><a href="#slide-14" class="toc-link"><span class="toc-link__num">14</span><span>專案盤點：已實現項目 vs. 未實現項目</span></a></li>
+    </ol>
+  </aside>
+
+  <!-- 手機／平板底部抽屜選單 -->
+  <div class="prefs-backdrop" id="prefs-backdrop" aria-hidden="true"></div>
+  <aside class="prefs-sheet" id="prefs-sheet" aria-label="檢視設定">
+    <div class="prefs-sheet__grip" aria-hidden="true"></div>
+    <div class="prefs-sheet__head">
+      <strong style="font-family: var(--font-display); font-size: 17px;">檢視設定與資源連結</strong>
+      <button type="button" class="ctrl-btn" id="prefs-close" aria-label="關閉設定">✕</button>
+    </div>
+
+    <div class="prefs-sheet__row">
+      <span class="prefs-sheet__label">配色主題</span>
+      <div class="seg-group" role="group" aria-label="配色模式">
+        <button type="button" data-theme-set="system" aria-pressed="true">系統</button>
+        <button type="button" data-theme-set="light" aria-pressed="false">亮色</button>
+        <button type="button" data-theme-set="dark" aria-pressed="false">暗色</button>
+      </div>
+    </div>
+
+    <div class="prefs-sheet__row">
+      <span class="prefs-sheet__label">閱讀模式與外部資源</span>
+      <div class="grid-2" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <button type="button" class="ctrl-btn js-mode-btn" aria-pressed="true">
+          <span class="mode-label">簡報模式</span>
+        </button>
+        <a href="https://floorplan-skyroute.up.railway.app" target="_blank" rel="noopener noreferrer" class="ctrl-btn">
+          <span>互動架構圖 ↗</span>
+        </a>
+        <a href="./apidocs.html" target="_blank" rel="noopener" class="ctrl-btn">
+          <span>API 串接指南 ↗</span>
+        </a>
+        <a href="/" class="ctrl-btn">
+          <span>返回產品首頁</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 投影片主舞台 -->
+  <main class="deck-stage" id="deck-stage">
+
+    <!-- ======================================================================
+         SLIDE 01：SkyRoute 是什麼？我們解決什麼痛點
+         ====================================================================== -->
+    <section class="slide is-active" id="slide-1" data-title="SkyRoute 是什麼？我們解決什麼痛點">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">01 / 產品簡介</span>
+          <span class="pill-tag">智慧機票搜尋 × 自動低價追蹤</span>
+        </div>
+        <h1 class="hero-title">像「看股票」一樣買機票<br>不用天天重刷，降價自動通知你</h1>
+        <p class="slide-lead">
+          SkyRoute 是一個協助旅客「聰明找機票、自動盯票價」的網站工具。只要把想搭乘的航線加入清單，後台巡邏員就會定時追蹤價格變化，一旦降到理想價位便立即通知你。
+        </p>
+      </div>
+
+      <div class="hero-split">
+        <div class="card card--green">
+          <span class="card__num" style="color: var(--coral-soft);">為什麼我們要做 SkyRoute？</span>
+          <h2 class="card__title">解決大家買機票最常遇到的 3 個困擾</h2>
+          <p class="card__body">
+            過去為了買到便宜機票，往往得每天開好幾個分頁反覆查詢，不但費時，也容易錯過降價時機：
+          </p>
+          <ul class="check-list">
+            <li><strong>困擾 1：不確定現在買是貴還是便宜？</strong> → 提供類似股市的「價格走勢圖」，一眼看出最近 7 天是漲是跌。</li>
+            <li><strong>困擾 2：提早或延後一天出發，能省多少？</strong> → 「7 × 7 價格日曆」一次列出前後各 3 天、共 49 種日期組合，並以綠色標示最便宜的日期。</li>
+            <li><strong>困擾 3：轉機等太久，或轉機地點不方便？</strong> → 可以指定想經過或想避開的機場，也能讓去程與回程分開購買、搭乘不同航空公司。</li>
+          </ul>
+        </div>
+
+        <div class="grid-2">
+          <div class="card card--stone">
+            <span class="card__num">全球機場與城市搜尋</span>
+            <div class="stat-value">4,000+</div>
+            <p class="card__body">輸入「東京」即可同時搜尋成田與羽田機場，並支援以中、英文查找全球機場。</p>
+          </div>
+          <div class="card card--stone">
+            <span class="card__num">彈性日期一次比價</span>
+            <div class="stat-value">7 × 7 格</div>
+            <p class="card__body">同時比較出發與回程前後各 3 天的票價，並以顏色深淺標示最划算的日期。</p>
+          </div>
+          <div class="card card--stone">
+            <span class="card__num">多國貨幣即時切換</span>
+            <div class="stat-value">12 種幣別</div>
+            <p class="card__body">支援台幣（TWD）、日圓、美元、歐元等 12 種常用幣別，價格由系統直接換算。</p>
+          </div>
+          <div class="card card--stone">
+            <span class="card__num">全自動背景巡邏</span>
+            <div class="stat-value">每分鐘</div>
+            <p class="card__body">不必一直開著網頁；後台 Worker 每分鐘檢查哪些追蹤已到查價時間並自動查價，達標時透過 Discord／Slack 推播降價通知。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 02：專案動機：24 小時雲端 AI × 自動搶票藍圖
+         ====================================================================== -->
+    <section class="slide" id="slide-2" data-title="專案動機：24 小時雲端 AI × 自動搶票藍圖">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">02 / 專案動機與理想願景</span>
+          <span class="pill-tag">願景規劃 · 部分尚未實作（見第 14 頁）</span>
+        </div>
+        <h2 class="slide-title">專案動機：把「24 小時不關機 AI」帶進機票搶購</h2>
+        <p class="slide-lead">
+          看到 <strong>Meta Muse、Grok Bot、OpenAI Dot、Manus Cue、Instinct</strong> 等 7/24 雲端 AI 能全天候替人完成任務（例如透過 Instinct 每天自動投遞履歷），加上自己熱愛出國旅遊，也常在社群上看到別人憑手速搶到神價機票，因此決定結合兩者，打造<strong>「AI ＋ 旅遊」平台</strong>，幫大家買到理想價格的機票。
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--coral">理想運作 4 部曲</span>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">AI 自動監控與購票流程</span>
+          </div>
+          <h3 class="card__title">從設定目標到自動搶票的完整做法</h3>
+          <ol class="pipeline-steps">
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">01</span>
+              <div>
+                <strong>預先綁定個人訂票資料</strong>
+                <p>使用者先綁定 Google 帳號，並將訂票所需資料（護照資訊、信用卡號、各航空公司會員帳號）交由系統安全保管。</p>
+              </div>
+            </li>
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">02</span>
+              <div>
+                <strong>搜尋航線並設定監控條件</strong>
+                <p>選定目的地與出發日期，設定「目標價」與「監控頻率」，加入清單後由雲端全天候盯價。</p>
+              </div>
+            </li>
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">03</span>
+              <div>
+                <strong>達到目標價：詢問確認 或 AI 直接下單</strong>
+                <p>達標時通知使用者確認是否下單；也可開啟「AI 免詢問直接下單」或「特定時段自動下單」模式。</p>
+              </div>
+            </li>
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">04</span>
+              <div>
+                <strong>達標成交或過期自動清除</strong>
+                <p>旅程達標並完成訂購，或出發日已過時，系統會自動停止監控並從清單移除。</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns: minmax(0, 1fr);">
+          <div class="card card--green">
+            <span class="card__num" style="color: var(--coral-soft);">貼心設計 · 三種下單控制模式</span>
+            <h3 class="card__title">自己掌控，或在忙碌時段交給 AI</h3>
+            <p class="card__body">
+              為了兼顧「消費安全」與「不錯過限時低價」，規劃了三種授權方式：
+            </p>
+            <ul class="check-list">
+              <li><strong>預設詢問模式（最安心）</strong>：達標時先通知你，點選「同意」後才會下單，未經同意不會扣款；缺點是太晚回覆可能錯過低價。</li>
+              <li><strong>全自動免詢問模式（反應最快）</strong>：若事先勾選同意「AI 可不經詢問直接下單（視同同意該筆消費，並自行承擔後果）」，一達標 AI 就會立即代為訂票。</li>
+              <li><strong>分時段自動下單模式（最實用）</strong>：可指定<strong>「睡覺、上班、上課、考試」</strong>等無法查看手機的時段由 AI 自動下單；其餘時間仍由你決定，同意後 AI 才會動作。</li>
+            </ul>
+          </div>
+
+          <div class="card card--stone">
+            <span class="card__num">靈感來源 · 7/24 CLOUD AI AGENTS</span>
+            <h3 class="card__title">為什麼雲端 24 小時 AI 是關鍵？</h3>
+            <p class="card__body">
+              低價機票可能在任何時段出現，也可能很快被訂走。與其靠人工不斷重新整理，不如像用 <strong>Instinct</strong> 每天在雲端自動投遞履歷那樣，把盯票與訂票交給全天候運作的雲端 AI。
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 03：三大核心功能：找票、比價、自動盯價
+         ====================================================================== -->
+    <section class="slide" id="slide-3" data-title="三大核心功能：找票、比價、自動盯價">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">03 / 核心功能</span>
+          <span class="pill-tag">三大主打工具</span>
+        </div>
+        <h2 class="slide-title">三大核心功能：從「找靈感」到「買對價格」</h2>
+        <p class="slide-lead">
+          無論已經確定出發日期，或想先觀望一陣子、等待優惠，都可以靠這三項功能完成。
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <article class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--coral">功能 01</span>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">航班探索</span>
+          </div>
+          <h3 class="card__title">聰明找航班，轉機條件隨你挑</h3>
+          <p class="card__body">不只是列出機票，還能依照你的旅行習慣篩選出最合適的行程。</p>
+          <ul class="check-list">
+            <li><strong>單程、來回、多城市</strong>：想到歐洲玩倫敦與巴黎、從不同城市進出，最多可規劃 5 段行程。</li>
+            <li><strong>自訂轉機地</strong>：用「允許清單」指定只想經過的機場（例如香港、新加坡），或用「封鎖清單」排除不想經過的機場（例如需要過境簽證的）。</li>
+            <li><strong>預算與時間滑桿</strong>：拉動滑桿就能限制票價與總飛行時數範圍，並可調整轉機等待時間（預設為 1.5～5 小時）。</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--blue">功能 02</span>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">票價矩陣</span>
+          </div>
+          <h3 class="card__title">7 × 7 價格日曆，一眼看出哪天出發最省</h3>
+          <p class="card__body">假期日期有彈性時，快速找出前後幾天中最便宜的組合。</p>
+          <ul class="check-list">
+            <li><strong>以色彩直覺比價</strong>：越便宜越偏深綠色，越貴越偏珊瑚紅，不必逐格比對數字。</li>
+            <li><strong>邊算邊顯示</strong>：49 個日期組合會逐格即時出現，點選任一格即可查看詳細航班。</li>
+            <li><strong>三種推薦標籤</strong>：系統會為航班標示「最便宜」、「最快速」與「性價比首選」。</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--green">功能 03</span>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">看盤監控</span>
+          </div>
+          <h3 class="card__title">自選看盤清單，降價主動通知你</h3>
+          <p class="card__body">就像把關注的股票加入自選股，讓系統持續替你追蹤票價變化。</p>
+          <ul class="check-list">
+            <li><strong>一眼掌握漲跌</strong>：卡片直接顯示最新票價、與前一天相比的漲跌、近 7 天最低價，以及歷史價格折線圖。</li>
+            <li><strong>兩種降價提醒</strong>：可設定「低於指定金額（例如 NT$15,000）」或「較 7 日均價下跌指定百分比（例如 10%）」，達標即通知。</li>
+            <li><strong>保留航班明細</strong>：點開即可查看當時價格對應的航空公司與起飛時間。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 04：聰明挑選機制：怎麼幫你找出最划算機票？
+         ====================================================================== -->
+    <section class="slide" id="slide-4" data-title="聰明挑選機制：怎麼幫你找出最划算機票？">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">04 / 智慧決策邏輯</span>
+          <span class="pill-tag">用白話文看懂我們的計算方式</span>
+        </div>
+        <h2 class="slide-title">不只找最低價，也把「時間與體力」算進成本</h2>
+        <p class="slide-lead">
+          便宜 500 元，卻要在機場苦等 12 小時，真的划算嗎？SkyRoute 內建三項挑選機制，協助你避開不划算的選擇。
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <span class="card__num">機制 01 · 時間也是金錢</span>
+          <h3 class="card__title">「性價比首選」是怎麼算出來的？</h3>
+          <p class="card__body">
+            系統會把「飛行時間」與「轉機等待時間」也換算成金額。由於在機場等候比搭機更消耗體力，<strong>轉機等待時間會乘以 1.5 倍</strong>計算：
+          </p>
+          <div class="formula-box">
+            綜合划算分數 ＝ 機票價格<br>
+            &nbsp;&nbsp;＋（飛行時數 ＋ 轉機等待時數 <em>× 1.5 倍</em>）× 每小時時間價值
+          </div>
+          <p class="card__body" style="margin-top: 4px;">
+            如此一來，系統就能挑出<strong>票價合理、飛行時間短、轉機等待不長</strong>的高性價比航班。
+          </p>
+          <div class="slide-meta" style="margin-top: 4px;">
+            <span class="pill-tag pill-tag--green">最便宜：票面價格最低</span>
+            <span class="pill-tag pill-tag--blue">最快速：總飛行時間最短</span>
+            <span class="pill-tag pill-tag--coral">性價比首選：時間＋金錢最划算</span>
+          </div>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns: minmax(0, 1fr);">
+          <div class="card card--stone">
+            <span class="card__num">機制 02 · 自動過濾陷阱航班</span>
+            <h3 class="card__title">揪出「假直飛」與不合理的轉機</h3>
+            <ul class="check-list">
+              <li><strong>識別中途停靠的「假直飛」</strong>：有些航班雖然不換機，但中途會降落其他城市（技術停靠）。系統會自動辨識，不會把這類航班當成直飛。</li>
+              <li><strong>避開過趕或過長的轉機</strong>：預設會排除轉機少於 1.5 小時（擔心趕不上）或超過 5 小時（等候過久）的航班。</li>
+            </ul>
+          </div>
+
+          <div class="card card--stone">
+            <span class="card__num">機制 03 · 拆開購買，有時更便宜</span>
+            <h3 class="card__title">「分段拆票」自動配對不同航空公司</h3>
+            <ul class="check-list">
+              <li><strong>去程與回程混搭航空公司</strong>：例如去程搭華航、回程搭長榮，分開購買單程票有時比同一家的來回票更便宜。</li>
+              <li><strong>自動檢查銜接時間</strong>：系統會確認兩段機票之間的時間足夠（同機場至少 2 小時，換機場至少 4 小時），確保行程銜接得上。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 05：系統架構全貌：三層分工如何合作？
+         ====================================================================== -->
+    <section class="slide" id="slide-5" data-title="系統架構全貌：三層分工如何合作？">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">05 / 技術架構全貌</span>
+          <span class="pill-tag">用一張圖看懂系統怎麼運作</span>
+        </div>
+        <h2 class="slide-title">系統架構全貌：就像一間分工明確的旅行社</h2>
+        <p class="slide-lead">
+          為了讓網站既能「快速回應畫面操作」，又能「在背景定時自動查價」，系統分為三個層次：
+        </p>
+      </div>
+
+      <div class="arch-diagram">
+        <div class="arch-tier">
+          <span class="arch-tier__label">第一層：使用者看得到的前台（網站畫面、網關與說明文件）</span>
+          <div class="arch-nodes">
+            <div class="arch-node">
+              <strong>網站畫面（React 前端）</strong>
+              <span>負責呈現搜尋表單、7×7 價格日曆、歷史走勢圖與看盤清單，手機、平板與電腦皆可順暢操作。</span>
+            </div>
+            <div class="arch-node">
+              <strong>大門警衛（Nginx 網關）</strong>
+              <span>站在網站最前面，對搜尋與 API 設定每秒請求上限（超過回 429），並對靜態檔案做壓縮與長期快取。</span>
+            </div>
+            <div class="arch-node">
+              <strong>說明文件（內建指南）</strong>
+              <span>包含這份產品簡報，以及說明如何呼叫 Duffel Flights API 的使用指南（/apidocs）。</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">▼ 使用者點選搜尋或新增盯價 ▼</div>
+
+        <div class="arch-tier">
+          <span class="arch-tier__label">第二層：負責運算與巡邏的後台（API 伺服器與 Worker）</span>
+          <div class="arch-nodes">
+            <div class="arch-node">
+              <strong>後台主系統（FastAPI 伺服器）</strong>
+              <span>收到搜尋請求後，負責查詢航班、換算 12 種幣別、過濾轉機條件，並計算推薦排名。</span>
+            </div>
+            <div class="arch-node">
+              <strong>定時巡邏員（背景 Worker）</strong>
+              <span>每分鐘檢查一次有哪些追蹤已到查價時間；查價後若達到降價條件，立即發送通知。</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">▼ 存取歷史紀錄 ＆ 連線國際航班系統 ▼</div>
+
+        <div class="arch-tier">
+          <span class="arch-tier__label">第三層：資料儲存與外部服務（資料庫、快取與第三方服務）</span>
+          <div class="arch-nodes">
+            <div class="arch-node">
+              <strong>資料庫（PostgreSQL）</strong>
+              <span>保存 4,000 多座機場資料、使用者的看盤清單，以及每次巡邏查到的歷史票價。</span>
+            </div>
+            <div class="arch-node">
+              <strong>快取（Redis）</strong>
+              <span>暫存 30 分鐘內查過的搜尋結果，其他人查詢相同航線時可直接取用，不必重新呼叫 Duffel。</span>
+            </div>
+            <div class="arch-node">
+              <strong>外部服務（Duffel／Google／匯率／通知）</strong>
+              <span>向 Duffel 查詢航班報價、向 open.er-api.com 取得匯率、以 Google 帳號登入，並透過 Discord／Slack Webhook 推播通知。</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 06：後端技術架構：四層分工與依賴方向
+         ====================================================================== -->
+    <section class="slide" id="slide-6" data-title="後端技術架構：四層分工與依賴方向">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">06 / 後端技術架構</span>
+          <span class="pill-tag">FastAPI · async SQLAlchemy 2 · asyncpg · Redis</span>
+        </div>
+        <h2 class="slide-title">後端採「四層分工」：商業邏輯純淨、外部服務隔離</h2>
+        <p class="slide-lead">
+          依賴方向由上往下：<strong>API → Services → Domain</strong>；Duffel 被隔離在最外層的「防腐層」，日後更換機票供應商時，不必改動核心邏輯。
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="layer-stack" aria-label="後端四層架構">
+          <div class="layer layer--api">
+            <div class="layer__head"><strong>api/</strong><span>輕量的 FastAPI Router</span></div>
+            <p>只做參數驗證、取出身分與金鑰、回傳統一格式 <code class="mono">{success, data, error, meta}</code>；不含商業邏輯。</p>
+            <div class="chip-row"><code>explore.py</code><code>watchlists.py</code><code>auth.py</code><code>credentials.py</code><code>deps.py</code></div>
+          </div>
+          <div class="layer layer--svc">
+            <div class="layer__head"><strong>services/</strong><span>流程編排（有 I/O）</span></div>
+            <p>串起快取、資料庫與外部 API：搜尋、探索排序、匯率、巡邏、告警、帳號與金鑰加密。</p>
+            <div class="chip-row"><code>search_service</code><code>explore_service</code><code>patrol</code><code>alerts</code><code>fx</code><code>auth</code><code>cache</code><code>rate_limit</code></div>
+          </div>
+          <div class="layer layer--dom">
+            <div class="layer__head"><strong>domain/</strong><span>純邏輯，完全沒有 I/O</span></div>
+            <p>不可變（frozen）資料模型與演算法，單元測試最容易：轉機過濾、綜合代價排名、分段拆票銜接 DP。</p>
+            <div class="chip-row"><code>offers</code><code>topology</code><code>metrics</code><code>connections</code></div>
+          </div>
+          <div class="layer layer--int">
+            <div class="layer__head"><strong>integrations/</strong><span>防腐層（Anti-corruption）</span></div>
+            <p>把 Duffel 的原始 JSON 轉成自家模型，並負責限流、重試與帳號隔離。</p>
+            <div class="chip-row"><code>duffel_client</code><code>duffel_mapper</code></div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns: minmax(0, 1fr);">
+          <div class="card card--green">
+            <span class="card__num" style="color: var(--coral-soft);">container.py · 單一依賴容器</span>
+            <h3 class="card__title">API 與 Worker 共用同一個 Container</h3>
+            <ul class="check-list">
+              <li><strong>凍結（frozen）的容器</strong>：一次組好 DB 引擎與 Session 工廠、快取、<code class="mono">httpx</code> 連線、<code class="mono">DuffelGateway</code>、<code class="mono">SearchService</code>、<code class="mono">FxService</code>、<code class="mono">TokenCipher</code>、<code class="mono">Notifier</code>。</li>
+              <li><strong>同一份程式碼、兩種執行方式</strong>：<code class="mono">app.main:app_factory</code> 提供 HTTP；<code class="mono">app.worker</code> 每 60 秒 tick 一次負責巡邏。</li>
+              <li><strong>連線池</strong>：asyncpg，<code class="mono">pool_size=10</code> + <code class="mono">max_overflow=10</code>，並啟用 <code class="mono">pool_pre_ping</code>。</li>
+            </ul>
+          </div>
+
+          <div class="card card--stone">
+            <span class="card__num">Duffel 整合 · 三道保護</span>
+            <h3 class="card__title">限流、帳號隔離、錯誤翻譯</h3>
+            <ul class="check-list">
+              <li><strong>Token Bucket 限流</strong>：每個金鑰各自一個桶（預設 0.4 次／秒、突發 4 次）；遇到 429 會依 <code class="mono">ratelimit-reset</code> 等待後重試。</li>
+              <li><strong>金鑰命名空間</strong>：金鑰 SHA-256 前 16 碼；快取鍵加上 <code class="mono">:{namespace}</code>，不同帳號的報價不會混用。</li>
+              <li><strong>統一錯誤處理</strong>：缺少／無效金鑰回 401，錯誤訊息依 <code class="mono">Accept-Language</code> 翻成中英文。</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 07：API 端點與兩條核心資料流
+         ====================================================================== -->
+    <section class="slide" id="slide-7" data-title="API 端點與兩條核心資料流">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">07 / API 與資料流</span>
+          <span class="pill-tag">RESTful · NDJSON 串流 · 統一回應格式</span>
+        </div>
+        <h2 class="slide-title">API 端點總覽，以及「即時查票」與「背景巡邏」兩條資料流</h2>
+        <p class="slide-lead">
+          所有 JSON 回應都採用同一種格式 <code class="mono">{success, data, error, meta}</code>；票價矩陣則以 NDJSON 逐行串流，算完一格就先送出一格。
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <span class="card__num">REST 端點（前綴 /api）</span>
+          <table class="endpoint-table">
+            <thead><tr><th>方法</th><th>路徑</th><th>用途</th></tr></thead>
+            <tbody>
+              <tr><td>POST</td><td>/search</td><td>單一航線搜尋、換匯、轉機過濾、排名</td></tr>
+              <tr><td>POST</td><td>/fare-matrix</td><td>7×7 價格日曆（NDJSON 串流）</td></tr>
+              <tr><td>GET</td><td>/airports</td><td>機場／城市搜尋，查無結果再問 Duffel</td></tr>
+              <tr><td>GET</td><td>/fx</td><td>12 種幣別匯率表</td></tr>
+              <tr><td>GET</td><td>/config</td><td>前端執行設定（是否開放登入等）</td></tr>
+              <tr><td>POST</td><td>/credentials/verify</td><td>驗證使用者自備的 Duffel 金鑰</td></tr>
+              <tr><td>POST</td><td>/auth/google · /auth/logout</td><td>Google 登入、登出；<code>GET /auth/me</code> 取目前帳號</td></tr>
+              <tr><td>PUT／DELETE</td><td>/me/duffel-key</td><td>設定或移除帳號專屬金鑰</td></tr>
+              <tr><td>GET／POST</td><td>/watchlists</td><td>看盤清單列表、新增監控</td></tr>
+              <tr><td>PATCH／DELETE</td><td>/watchlists/{id}</td><td>修改設定、取消（<code>?purge=true</code> 硬刪除）</td></tr>
+              <tr><td>GET</td><td>/watchlists/{id}/history · itinerary · alerts</td><td>價格歷史、最新航班明細、通知紀錄</td></tr>
+              <tr><td>POST</td><td>/watchlists/patrol · /patrol/run</td><td>手動觸發巡邏（個人／全系統）</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns: minmax(0, 1fr);">
+          <div class="card">
+            <div class="slide-meta"><span class="pill-tag pill-tag--blue">資料流 A · 即時查票</span></div>
+            <ol class="flow-list">
+              <li><b>1</b><span>Router 解析請求；金鑰依序取 <code>X-Duffel-Token</code> → 帳號金鑰 → 伺服器預設</span></li>
+              <li><b>2</b><span>SearchService 以 <code>route:…:{namespace}</code> 查快取（30 分鐘，cache-aside）</span></li>
+              <li><b>3</b><span>未命中：DuffelGateway 限流後呼叫 <code>offer_requests</code>，Mapper 轉成 FlightOffer</span></li>
+              <li><b>4</b><span>ExploreService：FxService 換匯 → topology 過濾 → metrics 排名與標籤 → 回傳價格／時長範圍</span></li>
+            </ol>
+          </div>
+          <div class="card">
+            <div class="slide-meta"><span class="pill-tag pill-tag--green">資料流 B · 背景巡邏</span></div>
+            <ol class="flow-list">
+              <li><b>1</b><span>Worker 每 60 秒 tick；取得 Redis 鎖 <code>skyroute:lock:patrol</code>，確保同時只跑一個</span></li>
+              <li><b>2</b><span>先把出發日已過的追蹤標成 EXPIRED，並清除其金鑰</span></li>
+              <li><b>3</b><span>只挑 <code>next_check_at</code> 已到的追蹤，依 (查詢, 金鑰指紋) 分組，丟進 asyncio 佇列並行處理</span></li>
+              <li><b>4</b><span>寫入 <code>price_history</code>（含航班 JSON）→ 判斷目標價／降幅 → 24 小時冷卻 → Webhook 推播並寫 <code>alert_history</code></span></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 08：資料庫架構：PostgreSQL 資料表與 Redis 快取
+         ====================================================================== -->
+    <section class="slide" id="slide-8" data-title="資料庫架構：PostgreSQL 資料表與 Redis 快取">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">08 / 資料庫架構</span>
+          <span class="pill-tag">PostgreSQL 5 張表 · JSONB · Redis 快取與分散式鎖</span>
+        </div>
+        <h2 class="slide-title">資料庫架構：5 張資料表，加上一層 Redis</h2>
+        <p class="slide-lead">
+          關聯式資料放 PostgreSQL；彈性欄位（多航段、轉機清單、當次航班）用 JSONB。
+        </p>
+      </div>
+
+      <div class="er-grid">
+        <div class="table-card table-card--wide">
+          <div class="table-card__head"><code>tracked_watchlists</code><span>看盤追蹤（核心表）</span></div>
+          <ul class="col-list">
+            <li><code>id</code><span>UUID 主鍵</span></li>
+            <li><code>user_identifier</code><span>匿名 ID 或 <code>g:&lt;user uuid&gt;</code>（索引）</span></li>
+            <li><code>origin / destination</code><span>FK → airports.iata_code</span></li>
+            <li><code>departure_date / return_date</code><span>出發、回程日期</span></li>
+            <li><code>target_price / drop_percent / currency</code><span>目標價、相對降幅、幣別</span></li>
+            <li><code>ticket_mode / extra_legs / leg_airlines</code><span>整張票或分段拆票；多航段 JSONB</span></li>
+            <li><code>allowed_transits / excluded_transits</code><span>JSONB；另有最大轉機次數與轉機時間</span></li>
+            <li><code>patrol_interval_minutes / next_check_at</code><span>巡邏頻率與下次巡邏時間</span></li>
+            <li><code>duffel_token_enc / token_fingerprint</code><span>Fernet 加密金鑰與 16 碼指紋</span></li>
+            <li><code>status / is_active / webhook_url</code><span>TRACKING · EXPIRED · CANCELLED</span></li>
+          </ul>
+        </div>
+
+        <div class="table-card table-card--wide">
+          <div class="table-card__head"><code>price_history</code><span>每次巡邏的價格紀錄</span></div>
+          <ul class="col-list">
+            <li><code>id</code><span>BIGINT 自增主鍵</span></li>
+            <li><code>watchlist_id</code><span>FK → tracked_watchlists，<b>ON DELETE CASCADE</b></span></li>
+            <li><code>route_hash</code><span>同一查詢的雜湊（索引）</span></li>
+            <li><code>airline_code</code><span>單一航司，或拆票如 <code>CZ+BR</code></span></li>
+            <li><code>price / currency</code><span>NUMERIC(10,2)、預設 TWD</span></li>
+            <li><code>duration_minutes / stops</code><span>總時長、轉機次數</span></li>
+            <li><code>offers</code><span>JSONB：當次選中的航班（拆票每段一筆）</span></li>
+            <li><code>recorded_at</code><span>時間戳（索引）</span></li>
+          </ul>
+        </div>
+
+        <div class="table-card">
+          <div class="table-card__head"><code>alert_history</code><span>告警紀錄</span></div>
+          <ul class="col-list">
+            <li><code>watchlist_id</code><span>FK，CASCADE</span></li>
+            <li><code>price_history_id</code><span>FK，<b>SET NULL</b></span></li>
+            <li><code>triggered_price</code><span>觸發價格</span></li>
+            <li><code>reason</code><span>target／drop</span></li>
+            <li><code>channel / sent_at</code><span>webhook／log、時間</span></li>
+          </ul>
+        </div>
+
+        <div class="table-card">
+          <div class="table-card__head"><code>users</code><span>Google 帳號</span></div>
+          <ul class="col-list">
+            <li><code>id</code><span>UUID 主鍵</span></li>
+            <li><code>google_sub</code><span>UNIQUE，Google 帳號識別</span></li>
+            <li><code>email / name / picture</code><span>基本資料</span></li>
+            <li><code>duffel_token_enc</code><span>帳號專屬金鑰（加密）</span></li>
+            <li><code>created_at / last_login_at</code><span>建立、最後登入</span></li>
+          </ul>
+        </div>
+
+        <div class="table-card">
+          <div class="table-card__head"><code>airports</code><span>機場與城市（約 4,000 筆）</span></div>
+          <ul class="col-list">
+            <li><code>iata_code</code><span>PK，3 碼代碼</span></li>
+            <li><code>city_code / kind</code><span>城市聚合（TYO→HND/NRT）</span></li>
+            <li><code>name_zh / name_en / country</code><span>中英文名稱</span></li>
+            <li><code>timezone / size_rank</code><span>時區、排序權重</span></li>
+            <li><code>search_text</code><span>去重音小寫，供模糊搜尋</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 09：資料關聯、索引、結構演進與 Redis
+         ====================================================================== -->
+    <section class="slide" id="slide-9" data-title="資料關聯、索引、結構演進與 Redis">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">09 / 資料關聯與快取</span>
+          <span class="pill-tag">FK · 索引 · 冪等遷移 · Redis</span>
+        </div>
+        <h2 class="slide-title">表與表怎麼連？怎麼加速？結構怎麼演進？</h2>
+        <p class="slide-lead">
+          資料表之間的關聯與索引設計、不用 Alembic 的輕量遷移做法，以及 Redis 快取各自存什麼、放多久。
+        </p>
+      </div>
+
+      <div class="rel-diagram" aria-label="資料表關聯圖">
+        <div class="rel-node"><code>airports</code><span>機場／城市</span></div>
+        <div class="rel-edge">1 ─ N<small>origin／destination FK</small></div>
+        <div class="rel-node rel-node--core"><code>tracked_watchlists</code><span>看盤追蹤</span></div>
+        <div class="rel-edge">1 ─ N<small>FK · CASCADE</small></div>
+        <div class="rel-node"><code>price_history</code><span>價格紀錄</span></div>
+        <div class="rel-edge">1 ─ N<small>FK · SET NULL</small></div>
+        <div class="rel-node"><code>alert_history</code><span>告警紀錄</span></div>
+      </div>
+      <p class="rel-note"><code>users</code> 與 <code>tracked_watchlists</code> 以 <code>user_identifier = "g:&lt;uuid&gt;"</code> 字串對應，刻意不設外鍵，才能同時容納匿名使用者。<code>alert_history</code> 也直接 FK 到 <code>tracked_watchlists</code>（CASCADE）。</p>
+
+      <div class="grid-3">
+        <div class="card card--stone">
+          <span class="card__num">索引設計</span>
+          <ul class="check-list">
+            <li><strong>巡邏掃描</strong>：複合索引 <code class="mono">(is_active, departure_date)</code>，加上 <code class="mono">next_check_at</code>，只撈「到期」的追蹤。</li>
+            <li><strong>價格走勢</strong>：<code class="mono">(watchlist_id, recorded_at)</code>，單一追蹤的歷史曲線與近 7 天統計一次掃完。</li>
+            <li><strong>歸戶查詢</strong>：<code class="mono">user_identifier</code> 單欄索引，列出某人的清單或登入時合併匿名清單。</li>
+            <li><strong>機場搜尋</strong>：<code class="mono">city_code</code> 索引，並以去重音的 <code class="mono">search_text</code> 比對。</li>
+          </ul>
+        </div>
+        <div class="card card--stone">
+          <span class="card__num">結構演進（沒有 Alembic）</span>
+          <ul class="check-list">
+            <li>啟動時 <code class="mono">create_all</code>，再執行 <code class="mono">ALTER TABLE … ADD COLUMN IF NOT EXISTS</code> 的冪等遷移。</li>
+            <li>全程包在 <code class="mono">pg_advisory_xact_lock</code> 內，多個 API／Worker 同時啟動也不會互相打架。</li>
+            <li>新增欄位只要改 <code class="mono">models.py</code> 並補一行遷移語句。</li>
+          </ul>
+        </div>
+        <div class="card card--green">
+          <span class="card__num" style="color: var(--coral-soft);">Redis（無 Redis 時退回記憶體）</span>
+          <ul class="check-list">
+            <li><code class="mono">route:{起}:{迄}:{日期}:…:{namespace}</code>　搜尋結果，30 分鐘</li>
+            <li><code class="mono">fx:usd</code>　匯率表，6 小時；失敗退回內建匯率並標記近似</li>
+            <li><code class="mono">skyroute:lock:patrol</code>　巡邏分散式鎖</li>
+            <li>機場查無結果的負向快取，保留 1 天</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 10：前端體驗設計：為什麼操作起來這麼順手？
+         ====================================================================== -->
+    <section class="slide" id="slide-10" data-title="前端體驗設計：為什麼操作起來這麼順手？">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">10 / 前端設計亮點</span>
+          <span class="pill-tag">好上手、好分享、免等待</span>
+        </div>
+        <h2 class="slide-title">前端體驗設計：把複雜的比價變得簡單直覺</h2>
+        <p class="slide-lead">
+          設計畫面時，我們特別重視「減少等待」與「方便和旅伴一起討論行程」。
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="card__num">亮點 01 · 一鍵分享給旅伴</span>
+          <h3 class="card__title">複製網址，就能分享完整搜尋結果</h3>
+          <p class="card__body">
+            和朋友或家人討論行程時，不必反覆截圖。你選定的出發地、日期、艙等與篩選條件，都會記錄在網址中。
+          </p>
+          <ul class="check-list">
+            <li>把網址傳給旅伴，對方開啟後看到的搜尋條件與你<strong>完全相同</strong>。</li>
+            <li>使用瀏覽器的「上一頁／下一頁」，也能回到先前試過的搜尋條件。</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <span class="card__num">亮點 02 · 即時漸進式顯示</span>
+          <h3 class="card__title">算好一格就顯示一格，不必空等</h3>
+          <p class="card__body">
+            查詢 7 × 7 價格日曆需要比對多達 49 組日期；若等全部算完才顯示，使用者只能一直等待。
+          </p>
+          <ul class="check-list">
+            <li>後端採用串流（NDJSON）傳輸，每算完一格，畫面就<strong>立即顯示該格的票價與顏色</strong>。</li>
+            <li>在「分段拆票」中選擇去程與回程班機時，畫面也會即時加總價格。</li>
+          </ul>
+        </div>
+
+        <div class="card card--green">
+          <span class="card__num" style="color: var(--coral-soft);">亮點 03 · 貼心個人化設定</span>
+          <h3 class="card__title">語言、幣別、深淺色主題隨心切換</h3>
+          <p class="card__body">
+            無論身在哪個國家、習慣在白天或深夜查票，都能調整成合適的瀏覽設定：
+          </p>
+          <ul class="check-list">
+            <li><strong>中英文雙語</strong>：可切換繁體中文與英文介面，連錯誤訊息也會跟著切換語言。</li>
+            <li><strong>深色與淺色模式</strong>：可跟隨裝置的系統設定自動切換，開啟頁面時也不會出現閃爍。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 11：跨裝置自適應：手機、平板、電腦都好讀
+         ====================================================================== -->
+    <section class="slide" id="slide-11" data-title="跨裝置自適應：手機、平板、電腦都好讀">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">11 / 跨裝置響應式設計（RWD）</span>
+          <span class="pill-tag">免安裝 App · 開啟瀏覽器即可使用</span>
+        </div>
+        <h2 class="slide-title">支援各種螢幕大小：電腦、平板、手機自動適應</h2>
+        <p class="slide-lead">
+          無論在外用手機查詢、在家用平板瀏覽，或在辦公室用大螢幕比價，畫面都會自動調整為適合該裝置的排版。
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <article class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--blue">電腦版 · 大螢幕</span>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">&gt; 1024px</span>
+          </div>
+          <h3 class="card__title">左右並排，一眼綜觀全局</h3>
+          <ul class="check-list">
+            <li><strong>左側篩選、右側結果</strong>：左側固定顯示價格滑桿與轉機條件，調整時右側航班清單即時更新。</li>
+            <li><strong>完整呈現圖表</strong>：7 × 7 價格日曆與歷史價格走勢圖可完整展開，方便比較多條航線。</li>
+            <li><strong>頂部工具列</strong>：語言、幣別、主題與帳號選單直接排列在頁面上方，可立即切換。</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--green">平板版 · 中螢幕</span>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">641px – 1024px</span>
+          </div>
+          <h3 class="card__title">雙欄卡片，觸控點按更順手</h3>
+          <ul class="check-list">
+            <li><strong>收合次要選單</strong>：將較少使用的設定收進「設定」按鈕，把空間留給航班資訊與價格圖表。</li>
+            <li><strong>篩選改為抽屜</strong>：需要調整轉機條件時再開啟篩選抽屜，平時畫面更簡潔。</li>
+            <li><strong>加大觸控區域</strong>：多數可點擊元件的高度至少 40～44px，降低誤觸機率。</li>
+          </ul>
+        </article>
+
+        <article class="card card--green">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--coral">手機版 · 小螢幕</span>
+            <span class="mono" style="font-size: 12px; color: var(--coral-soft);">≤ 640px</span>
+          </div>
+          <h3 class="card__title">單手易操作，版面不橫向溢出</h3>
+          <ul class="check-list">
+            <li><strong>底部滑出式視窗（Bottom Sheet）</strong>：設定與篩選對話框從螢幕下方滑出，單手拇指即可操作。</li>
+            <li><strong>搜尋表單自動收合</strong>：送出搜尋後，輸入欄會收成一行摘要，讓航班結果更快進入視線。</li>
+            <li><strong>直向卡片排列</strong>：多欄資訊在手機上改為上下排列，不需左右捲動。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 12：後端加速與巡邏：為什麼查價又快又省資源？
+         ====================================================================== -->
+    <section class="slide" id="slide-12" data-title="後端加速與巡邏：為什麼查價又快又省資源？">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">12 / 後端運作秘訣</span>
+          <span class="pill-tag">快取記憶 × 合併查詢 × 防打擾通知</span>
+        </div>
+        <h2 class="slide-title">後端如何運作？即時查票更快，背景盯價不壅塞</h2>
+        <p class="slide-lead">
+          Duffel 對測試帳號限制每分鐘約 30 次報價查詢，若每次都直接查詢，容易被限流。後台以「雙軌分工」來解決這個問題：
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--blue">當你在網頁上即時查票時</span>
+          </div>
+          <h3 class="card__title">先查快取，相同航線直接取用</h3>
+          <ol class="pipeline-steps">
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">01</span>
+              <div>
+                <strong>步驟 1：先檢查 30 分鐘內是否查過</strong>
+                <p>若 30 分鐘內已有人查過同一天的「台北飛東京」，系統會直接取用快取結果，<strong>不必再呼叫 Duffel</strong>。</p>
+              </div>
+            </li>
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">02</span>
+              <div>
+                <strong>步驟 2：沒有快取才向 Duffel 查詢</strong>
+                <p>遇到全新的查詢時，後台才向 Duffel 取得最新報價，並寫入快取。</p>
+              </div>
+            </li>
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">03</span>
+              <div>
+                <strong>步驟 3：自動換匯並挑出推薦航班</strong>
+                <p>換算成你指定的幣別（例如台幣）、過濾不符合條件的轉機，並標示「最便宜／最快速／性價比首選」後回傳。</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--green">當系統在幕後定時自動盯價時</span>
+          </div>
+          <h3 class="card__title">相同航線合併查詢，降價通知不重複打擾</h3>
+          <ol class="pipeline-steps">
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">01</span>
+              <div>
+                <strong>步驟 1：過期航班自動清理</strong>
+                <p>出發日已過的追蹤會被標記為「已過期」，不再查詢。</p>
+              </div>
+            </li>
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">02</span>
+              <div>
+                <strong>步驟 2：相同查詢合併，只查一次</strong>
+                <p>多位使用者追蹤同一條航線（查詢條件與金鑰相同）時，巡邏員只發出一次查詢，再把最新價格同時寫入這些追蹤。</p>
+              </div>
+            </li>
+            <li class="pipeline-step">
+              <span class="pipeline-step__idx">03</span>
+              <div>
+                <strong>步驟 3：24 小時通知冷卻</strong>
+                <p>價格達標時立即通知；之後 24 小時內，<strong>除非價格再創新低</strong>，否則不重複通知。</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 13：帳號安全與品質保障：安心使用不漏接
+         ====================================================================== -->
+    <section class="slide" id="slide-13" data-title="帳號安全與品質保障：安心使用不漏接">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">13 / 資安防護與穩定度</span>
+          <span class="pill-tag">免註冊可用 · Google 跨裝置同步 · 自動化測試把關</span>
+        </div>
+        <h2 class="slide-title">帳號安全與品質保障：簡單好用，背後有嚴格把關</h2>
+        <p class="slide-lead">
+          前台操作力求簡單，後台則做好資料加密與自動化測試，以維持系統穩定。
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <span class="card__num">貼心體驗 · 免註冊也能直接用</span>
+          <h3 class="card__title">Google 一鍵登入，手機電腦自動同步</h3>
+          <ul class="check-list">
+            <li><strong>免註冊即可使用</strong>：不登入也能查航班、看價格日曆、建立自己的看盤清單。</li>
+            <li><strong>登入後自動歸戶</strong>：想換到手機或另一台電腦使用時，只要以 Google 登入，原本匿名建立的看盤清單就會併入你的帳號。</li>
+          </ul>
+        </div>
+
+        <div class="card card--navy">
+          <span class="card__num" style="color: var(--coral-soft);">資安保護 · 專屬金鑰全程加密</span>
+          <h3 class="card__title">支援綁定個人金鑰，用不到時自動清除</h3>
+          <ul class="check-list">
+            <li><strong>可選用個人額度</strong>：一般使用者可直接使用系統內建金鑰；需要高頻率巡邏者，可綁定自己的 Duffel 金鑰（30 分鐘以內的巡邏頻率須自備金鑰）。</li>
+            <li><strong>加密保存</strong>：你的金鑰存入資料庫前會先以 Fernet 對稱加密（金鑰由伺服器的 SECRET_KEY 衍生）；取消監控或出發日已過時，系統會<strong>自動清除該筆追蹤的金鑰紀錄</strong>。</li>
+          </ul>
+        </div>
+
+        <div class="card card--stone">
+          <span class="card__num">品質把關 · 200 多項自動檢查</span>
+          <h3 class="card__title">每次變更都經過自動測試</h3>
+          <ul class="check-list">
+            <li><strong>200 多項自動測試</strong>：包含後台 176 項與前台 37 項，用來驗證算價、換匯與轉機過濾；後端 CI 並要求測試覆蓋率不低於 80%。</li>
+            <li><strong>匯率來源異常時仍可使用</strong>：若匯率網站暫時無法連線，系統會改用內建備用匯率，並提示價格為近似值。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SLIDE 14：專案盤點：已實現項目 vs. 未實現項目
+         ====================================================================== -->
+    <section class="slide" id="slide-14" data-title="專案盤點：已實現項目 vs. 未實現項目">
+      <div class="slide-header">
+        <div class="slide-meta">
+          <span class="kicker">14 / 成果盤點與下一步藍圖</span>
+          <span class="pill-tag">目前已實現功能 vs. 尚未實現規劃</span>
+        </div>
+        <h2 class="slide-title">專案現況盤點：我們已經完成了什麼？下一步是什麼？</h2>
+        <p class="slide-lead">
+          目前已完成搜尋比價、7×7 價格日曆、自選看盤清單與跨裝置自適應介面等核心功能；下一步將推進雲端部署、真實航班資料、個人資料保管與 AI 自動下單。
+        </p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card card--green">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--green">COMPLETED · 已實現項目</span>
+            <span class="mono" style="font-size: 12px; color: var(--coral-soft);">目前已確認完成</span>
+          </div>
+          <h3 class="card__title">目前已實現的 5 大核心成果</h3>
+          <ul class="check-list">
+            <li><strong>1. Google 帳號登入與跨裝置清單同步</strong>：支援免註冊試用；登入 Google 後，匿名看盤清單會自動歸戶，並可加密保存個人 API 金鑰。</li>
+            <li><strong>2. 多條件航班探索與分段拆票混搭</strong>：支援 4,000 多座機場的中英文搜尋、單程／來回／多航段、指定或排除轉機地，以及去回程分開購買的自動配對。</li>
+            <li><strong>3. 7 × 7 價格日曆與「性價比首選」計算</strong>：前後各 3 天共 49 格日期同步比價，並把飛行與轉機等待時間折算成金額，標示出性價比首選。</li>
+            <li><strong>4. 自選看盤清單與自訂監控設定</strong>：可將航線加入清單、設定目標價或跌幅百分比與監控頻率，並顯示近 7 天漲跌與歷史價格走勢圖。</li>
+            <li><strong>5. 過期航班自動清理與三端自適應畫面（RWD）</strong>：出發日已過時自動標記為已過期、停止巡檢並清除個人金鑰；取消監控時可選擇連同歷史紀錄一併刪除；版面會依手機、平板、電腦自動調整，並支援中英雙語與 12 種幣別。</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="slide-meta">
+            <span class="pill-tag pill-tag--coral">ROADMAP · 未實現項目（下一步規劃）</span>
+            <span class="mono" style="font-size: 12px; color: var(--muted);">未來升級重點</span>
+          </div>
+          <h3 class="card__title">尚未實現的 4 項重點：完成 AI 全自動訂票流程</h3>
+          <ul class="check-list">
+            <li>
+              <strong>1. 真實與即時航班數據</strong><br>
+              目前預設連接 Duffel 測試環境，報價為模擬資料。下一步將申請正式（Live Mode）權限，串接真實的即時航班與票價。
+            </li>
+            <li>
+              <strong>2. 用戶信用卡號、護照、航司會員綁定</strong><br>
+              建立安全的個人資料保管機制，讓使用者預先綁定<strong>護照資料、信用卡號與各航空公司會員帳號</strong>，供日後自動訂票使用。
+            </li>
+            <li>
+              <strong>3. 雲端主機架設（7×24 全天候不關機運作）</strong><br>
+              將整套系統與背景巡邏服務部署到雲端主機，全天候運行，並完整測試自動查價與降價通知流程。
+            </li>
+            <li>
+              <strong>4. AI 整合（詢問確認下單 ＆ 分時段全自動下單）</strong><br>
+              整合 AI Agent，實作「達標時先詢問、同意後才下單」與「預先授權、免詢問直接下單」，並可在<strong>睡覺、上班、上課、考試等時段自動切換為 AI 自動下單模式</strong>；成交後自動從清單移除。
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 底部簡報導覽控制列 -->
+  <footer class="bottombar" aria-label="投影片切換控制">
+    <div class="slide-dots" id="slide-dots" role="tablist" aria-label="投影片頁碼圓點"></div>
+    <div class="nav-controls">
+      <button type="button" class="ctrl-btn" id="prev-btn" aria-label="上一頁（方向鍵左）">← 上一頁</button>
+      <span class="slide-counter" id="slide-counter" aria-live="polite">01 / 14</span>
+      <button type="button" class="ctrl-btn" id="next-btn" aria-label="下一頁（方向鍵右）">下一頁 →</button>
+    </div>
+  </footer>
+
+  <script src="./presentation.js"></script>
+</body>
+</html>
