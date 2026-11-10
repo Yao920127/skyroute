@@ -1,7 +1,7 @@
 """看盤巡檢與自動失效流程（Offline Pipeline）。
 
 Worker 每分鐘觸發一次，只處理「到期」（next_check_at 已到）的追蹤；手動巡檢則處理全部。
-1. 出發日已過的追蹤標的 → EXPIRED（不再輪詢）
+1. 起飛前 1 小時（沒有航班時間時：出發地當地的出發日過完）的追蹤標的 → EXPIRED（不再輪詢）
 2. 讀取要巡檢的清單，依「航線 + 日期 + 乘客 + 艙等 + 轉機上限」去重聚合
 3. 推入佇列，由多個 consumer 受控消費（對外呼叫經過令牌桶節流）
 4. 每個標的套用自己的拓撲條件取最低價 → 寫入 price_history
@@ -23,6 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import SessionFactory
 from app.domain.connections import cheapest_chain
+from app.domain.departure import departure_cutoff, first_departing_at
 from app.domain.offers import FlightOffer
 from app.domain.topology import TopologyFilter, apply_topology
 from app.integrations.duffel_client import (
@@ -31,7 +32,7 @@ from app.integrations.duffel_client import (
     DuffelGateway,
     MissingCredentialsError,
 )
-from app.models import AlertHistory, PriceHistory, TrackedWatchlist, WatchStatus
+from app.models import Airport, AlertHistory, PriceHistory, TrackedWatchlist, WatchStatus
 from app.schemas import PatrolReport
 from app.services.alerts import NotificationError, Notifier, in_cooldown, threshold_reason
 from app.services.cache import Cache
@@ -207,10 +208,39 @@ def client_for(ctx: PatrolContext, key: GroupKey, watches: list[TrackedWatchlist
     raise MissingCredentialsError("無法解密使用者金鑰（SECRET_KEY 可能已更換）")
 
 
-async def expire_departed(session: AsyncSession, today: date) -> int:
+async def _departed_ids(session: AsyncSession, now: datetime) -> list[object]:
+    """已到結清時間的追蹤：起飛前 1 小時，或（沒有航班時間時）出發地當地的出發日過完。"""
+    last_offers = (
+        select(PriceHistory.offers)
+        .where(PriceHistory.watchlist_id == TrackedWatchlist.id)
+        .order_by(PriceHistory.recorded_at.desc())
+        .limit(1)
+        .correlate(TrackedWatchlist)
+        .scalar_subquery()
+    )
+    rows = await session.execute(
+        select(TrackedWatchlist.id, TrackedWatchlist.departure_date, Airport.timezone, last_offers)
+        .join(Airport, Airport.iata_code == TrackedWatchlist.origin)
+        .where(
+            TrackedWatchlist.is_active.is_(True),
+            # 當地日期最多比 UTC 早一天；先用日期粗篩，再逐筆算出精確的結清時間
+            TrackedWatchlist.departure_date <= now.date() + timedelta(days=1),
+        )
+    )
+    return [
+        watch_id
+        for watch_id, departure_date, timezone, offers in rows
+        if departure_cutoff(departure_date, timezone, first_departing_at(offers)) <= now
+    ]
+
+
+async def expire_departed(session: AsyncSession, now: datetime) -> int:
+    ids = await _departed_ids(session, now)
+    if not ids:
+        return 0
     result = await session.execute(
         update(TrackedWatchlist)
-        .where(TrackedWatchlist.is_active.is_(True), TrackedWatchlist.departure_date < today)
+        .where(TrackedWatchlist.id.in_(ids), TrackedWatchlist.is_active.is_(True))
         .values(status=WatchStatus.EXPIRED, is_active=False, duffel_token_enc=None)
     )
     await session.commit()
@@ -372,7 +402,6 @@ async def run_patrol(
     cache: Cache,
     consumers: int,
     lock_ttl_s: int,
-    today: date | None = None,
     now: datetime | None = None,
     owner: str | None = None,
     due_only: bool = False,
@@ -388,11 +417,10 @@ async def run_patrol(
         return PatrolReport(skipped_locked=True)
 
     now = now or datetime.now(UTC)
-    today = today or now.date()
     stats: Counter[str] = Counter()
     try:
         async with ctx.sessions() as session:
-            stats["expired"] = await expire_departed(session, today)
+            stats["expired"] = await expire_departed(session, now)
             query = select(TrackedWatchlist).where(
                 TrackedWatchlist.is_active.is_(True),
                 TrackedWatchlist.status == WatchStatus.TRACKING,

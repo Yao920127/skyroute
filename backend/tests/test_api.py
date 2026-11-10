@@ -14,7 +14,7 @@ from sqlalchemy import select
 from app.config import Settings
 from app.container import Container
 from app.models import AlertHistory, PriceHistory, TrackedWatchlist, WatchStatus
-from app.services.patrol import run_patrol
+from app.services.patrol import expire_departed, run_patrol
 from tests.conftest import DUFFEL, USER
 from tests.factories import connecting_raw, direct_raw
 
@@ -306,7 +306,7 @@ class TestPatrolPipeline:
                     user_identifier="tester-1",
                     origin="TPE",
                     destination="NRT",
-                    # 巡檢以 UTC 日期判斷過期；用同一個時鐘，避免台北凌晨跑測試時失敗
+                    # 用 UTC 的昨天：不論在哪個時區跑測試，台北當地的出發日都已過完
                     departure_date=datetime.now(UTC).date() - timedelta(days=1),
                     target_price=Decimal(1),
                 )
@@ -318,6 +318,63 @@ class TestPatrolPipeline:
         async with container.sessions() as session:
             watch = (await session.scalars(select(TrackedWatchlist))).one()
             assert watch.status == WatchStatus.EXPIRED and watch.is_active is False
+
+    async def test_expires_one_hour_before_the_tracked_flight_takes_off(
+        self, container: Container
+    ) -> None:
+        # 截圖中的情境：TPE 11/10 19:25 起飛，台北 18:25（UTC 10:25）起不該再追蹤
+        departure = date(2026, 11, 10)
+        async with container.sessions() as session:
+            watch = TrackedWatchlist(
+                user_identifier="tester-1",
+                origin="TPE",
+                destination="ICN",
+                departure_date=departure,
+                target_price=Decimal(1),
+            )
+            session.add(watch)
+            await session.flush()
+            for recorded_at, departing_at in (
+                (datetime(2026, 11, 9, 2, 0, tzinfo=UTC), "2026-11-10T08:00:00"),
+                (datetime(2026, 11, 10, 9, 50, tzinfo=UTC), "2026-11-10T19:25:00"),  # 最新一筆
+            ):
+                session.add(
+                    PriceHistory(
+                        watchlist_id=watch.id,
+                        route_hash="h",
+                        airline_code="OZ",
+                        price=Decimal(100),
+                        duration_minutes=150,
+                        stops=0,
+                        offers=[{"slices": [{"departing_at": departing_at}]}],
+                        recorded_at=recorded_at,
+                    )
+                )
+            await session.commit()
+
+        async with container.sessions() as session:
+            assert await expire_departed(session, datetime(2026, 11, 10, 10, 24, tzinfo=UTC)) == 0
+            assert await expire_departed(session, datetime(2026, 11, 10, 10, 25, tzinfo=UTC)) == 1
+            expired = (await session.scalars(select(TrackedWatchlist))).one()
+            assert expired.status == WatchStatus.EXPIRED and expired.is_active is False
+
+    async def test_without_price_history_expires_when_the_local_departure_day_ends(
+        self, container: Container
+    ) -> None:
+        async with container.sessions() as session:
+            session.add(
+                TrackedWatchlist(
+                    user_identifier="tester-1",
+                    origin="TPE",
+                    destination="ICN",
+                    departure_date=date(2026, 11, 10),
+                    target_price=Decimal(1),
+                )
+            )
+            await session.commit()
+            # 台北 11/10 23:59 仍在追蹤；台北 11/11 00:00（UTC 仍是 11/10）即結清
+            assert await expire_departed(session, datetime(2026, 11, 10, 15, 59, tzinfo=UTC)) == 0
+            assert await expire_departed(session, datetime(2026, 11, 10, 16, 0, tzinfo=UTC)) == 1
 
     @respx.mock
     async def test_drop_percent_against_7_day_average(

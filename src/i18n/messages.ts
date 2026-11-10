@@ -332,7 +332,7 @@ export const zh = {
   "detail.stopConfirm": "確定停止追蹤 {route}？\n不再巡檢，但歷史價格與告警紀錄會保留。",
   "detail.deleteConfirm": "確定永久刪除 {route}？\n歷史價格與告警紀錄會一併刪除，無法復原。",
   "detail.ended.CANCELLED": "已停止追蹤：不再巡檢，歷史資料仍保留。",
-  "detail.ended.EXPIRED": "出發日已過，自動結清：不再巡檢，歷史資料仍保留。",
+  "detail.ended.EXPIRED": "起飛前 1 小時已過，自動結清：不再巡檢，歷史資料仍保留。",
   "detail.rule.target": "目標價 ≤ {v}",
   "detail.rule.drop": "7 日均價跌 ≥ {v}%",
   "detail.rule.direct": "僅直飛",
@@ -459,7 +459,7 @@ export const zh = {
   "home.bandLead":
     "每天 03:00（台北時間）自動啟動。即時搜尋與背景巡檢完全解耦，外部 API 的延遲與配額不會拖慢你的畫面。",
   "home.p1.title": "自動結清",
-  "home.p1.body": "出發日已過的標的標記為 EXPIRED，不再輪詢。",
+  "home.p1.body": "起飛前 1 小時，標的自動標記為 EXPIRED，不再輪詢。",
   "home.p2.title": "去重聚合",
   "home.p2.body": "多人追蹤同航線同日期，只發出一次查詢。",
   "home.p3.title": "令牌桶節流",
@@ -855,7 +855,7 @@ export const en: Record<MessageKey, string> = {
   "detail.deleteConfirm":
     "Permanently delete {route}?\nPrice history and alerts will be removed and can't be recovered.",
   "detail.ended.CANCELLED": "Stopped: no longer checked; history is kept.",
-  "detail.ended.EXPIRED": "Departure date has passed: no longer checked; history is kept.",
+  "detail.ended.EXPIRED": "Less than 1 hour to takeoff: no longer checked; history is kept.",
   "detail.rule.target": "Target ≤ {v}",
   "detail.rule.drop": "7-day avg drop ≥ {v}%",
   "detail.rule.direct": "Non-stop only",
@@ -984,7 +984,7 @@ export const en: Record<MessageKey, string> = {
   "home.bandLead":
     "Runs daily at 03:00 (Taipei). Live search and background checks are fully decoupled, so provider latency and quotas never slow your screen.",
   "home.p1.title": "Auto-expire",
-  "home.p1.body": "Watches past their departure date are marked EXPIRED and dropped.",
+  "home.p1.body": "Watches are marked EXPIRED and dropped 1 hour before takeoff.",
   "home.p2.title": "Deduplicate",
   "home.p2.body": "Many people watching the same route and date share one query.",
   "home.p3.title": "Token bucket",
